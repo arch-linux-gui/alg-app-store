@@ -1,0 +1,7 @@
+- [x] Search packages from all DB: Core, Extra & AUR
+- [x] Search Local DB and display packages in Install screen
+- [x] Add Install Func
+- [x] Add Uninstall Func
+- [x] Do State Management while installing with loader
+- [x] Do State Managerment while uninstalling with loader
+- [ ] Add Update All for updation of all packages
