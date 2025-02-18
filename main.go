@@ -25,7 +25,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:             "Arka Package Manager",
+		Title:             "Arka Package Manager (Beta)",
 		Width:             1124,
 		Height:            868,
 		MinWidth:          1024,
@@ -86,7 +86,7 @@ func main() {
 		},
 		Linux: &linux.Options{
 			Icon:             icon,
-			WebviewGpuPolicy: linux.WebviewGpuPolicyNever,
+			WebviewGpuPolicy: linux.WebviewGpuPolicyOnDemand,
 		},
 	})
 

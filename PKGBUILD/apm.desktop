@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Arka Package Installer
+GenericName=apm
+Keywords=utility;system;welcome;
+Encoding=UTF-8
+Terminal=false
+Exec=apm
+Icon=/usr/share/pixmaps/apm.png
+Comment=ALG - Package Installer
+Categories=System;Go;
+StartupNotify=true
