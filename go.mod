@@ -1,4 +1,4 @@
-module apm
+module alg-app-store
 
 go 1.21
 

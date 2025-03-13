@@ -79,7 +79,7 @@ func main() {
 			WebviewIsTransparent: true,
 			WindowIsTranslucent:  true,
 			About: &mac.AboutInfo{
-				Title:   "apm",
+				Title:   "alg-app-store",
 				Message: "",
 				Icon:    icon,
 			},
