@@ -25,7 +25,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:             "Arka Package Manager (Beta)",
+		Title:             "ALG App Store (Beta)",
 		Width:             1124,
 		Height:            868,
 		MinWidth:          1024,
