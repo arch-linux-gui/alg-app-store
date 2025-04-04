@@ -17,16 +17,24 @@ import { main } from "wailsjs/go/models";
 import PackageDetails from "./PackageDetails";
 import ErrorBoundary from "./ErrorBoundary";
 import { Skeleton } from "./ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "./ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Search: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchResults, setSearchResults] = useState<main.PackageInfo[]>([]);
+  const [allResults, setAllResults] = useState<main.PackageInfo[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedApp, setSelectedApp] = useState<main.PackageInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [installedApps, setInstalledApps] = useState<Set<string>>(new Set());
-
-  const searchResultsRef = useRef<main.PackageInfo[]>([]);
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   const handleSearch = async (): Promise<void> => {
     if (!searchTerm.trim()) {
@@ -35,7 +43,7 @@ const Search: React.FC = () => {
     }
 
     setSearchResults([]);
-    searchResultsRef.current = [];
+    setAllResults([]);
     setSelectedApp(null);
     setIsLoading(true);
     setError(null);
@@ -44,8 +52,20 @@ const Search: React.FC = () => {
       const res = await SearchPackage(
         searchTerm.toLowerCase().trim().replace(/\s+/g, "-")
       );
-      setSearchResults(res);
-      searchResultsRef.current = res;
+      setAllResults(res);
+
+      if (activeFilters.length > 0) {
+        const filtered = res.filter((pkg) =>
+          activeFilters.includes(pkg.repository)
+        );
+        setSearchResults(filtered);
+        if (filtered.length === 0) {
+          setError("No results found for selected filters!");
+        }
+      } else {
+        setSearchResults(res);
+      }
+
       if (res.length === 0) {
         setError("No results found");
       } else {
@@ -80,6 +100,36 @@ const Search: React.FC = () => {
     }
   };
 
+  const updateFilters = (filter: string, checked: boolean) => {
+    let newFilters: string[];
+
+    if (filter === "CLEAR_ALL") {
+      newFilters = [];
+    } else {
+      newFilters = checked
+        ? [...activeFilters, filter]
+        : activeFilters.filter((f) => f !== filter);
+    }
+
+    setActiveFilters(newFilters);
+
+    if (newFilters.length === 0) {
+      setSearchResults(allResults);
+      setError(null);
+    } else {
+      const filteredResults = allResults.filter((pkg) =>
+        newFilters.includes(pkg.repository)
+      );
+
+      if (filteredResults.length === 0) {
+        setError("No results found for selected filters!");
+      } else {
+        setError(null);
+        setSearchResults(filteredResults);
+      }
+    }
+  };
+
   const handleInstallStateChange = useCallback(() => {
     if (selectedApp) {
       checkInstalledApps([selectedApp]);
@@ -97,7 +147,7 @@ const Search: React.FC = () => {
       style: React.CSSProperties;
     }) => {
       const index = rowIndex * 3 + columnIndex;
-      const result = searchResultsRef.current[index];
+      const result = searchResults[index];
       if (!result) return null;
 
       const isInstalled = installedApps.has(result.name);
@@ -137,7 +187,7 @@ const Search: React.FC = () => {
         </div>
       );
     },
-    [installedApps]
+    [installedApps, searchResults]
   );
 
   const renderContent = () => {
@@ -172,9 +222,7 @@ const Search: React.FC = () => {
           {({ height, width }: { height: number; width: number }) => {
             const columnCount = width >= 1024 ? 3 : width >= 768 ? 2 : 1;
             const columnWidth = width / columnCount;
-            const rowCount = Math.ceil(
-              searchResultsRef.current.length / columnCount
-            );
+            const rowCount = Math.ceil(searchResults.length / columnCount);
             return (
               <Grid
                 columnCount={columnCount}
@@ -216,6 +264,10 @@ const Search: React.FC = () => {
                 onKeyDown={handleKeyPress}
                 className="flex-grow"
               />
+              <FilterDropdown
+                activeFilters={activeFilters}
+                onFilterChange={updateFilters}
+              />
               <Button onClick={handleSearch} disabled={isLoading}>
                 {isLoading ? "Searching..." : "Search"}
               </Button>
@@ -225,6 +277,71 @@ const Search: React.FC = () => {
         )}
       </div>
     </ErrorBoundary>
+  );
+};
+
+type FilterDropdownProps = {
+  activeFilters: string[];
+  onFilterChange: (filter: string, checked: boolean) => void;
+};
+
+const FilterDropdown: React.FC<FilterDropdownProps> = ({
+  activeFilters,
+  onFilterChange,
+}) => {
+  const repositories = ["core", "extra", "AUR"];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          className="min-w-[100px] flex items-center justify-between"
+        >
+          <span>Filter</span>
+          {activeFilters.length > 0 && (
+            <Badge variant="secondary" className="ml-1">
+              {activeFilters.length}
+            </Badge>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-26 bg-background">
+        {repositories.map((repo) => (
+          <DropdownMenuItem
+            key={repo}
+            onSelect={(e) => {
+              e.preventDefault();
+            }}
+            className="flex items-center justify-between cursor-pointer"
+          >
+            <Checkbox
+              checked={activeFilters.includes(repo)}
+              onCheckedChange={(checked) =>
+                onFilterChange(repo, checked === true)
+              }
+              aria-label={`Filter by ${repo}`}
+            />
+            <span className="text-left ml-2 w-full">{repo}</span>
+          </DropdownMenuItem>
+        ))}
+        {activeFilters.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => {
+                activeFilters.forEach((filter) =>
+                  onFilterChange("CLEAR_ALL", false)
+                );
+              }}
+              className="text-center text-xs cursor-pointer text-gray-500 hover:text-gray-700"
+            >
+              Clear all
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
