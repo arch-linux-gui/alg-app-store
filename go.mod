@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/Jguer/go-alpm/v2 v2.2.2
 	github.com/Morganamilo/go-pacmanconf v0.0.0-20210502114700-cff030e927a5
-	github.com/wailsapp/wails/v2 v2.9.1
+	github.com/wailsapp/wails/v2 v2.10.2
 )
 
 require (
