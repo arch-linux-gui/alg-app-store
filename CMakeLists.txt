@@ -42,6 +42,7 @@ set(SOURCES
     src/gui/search_widget.cpp
     src/gui/installed_widget.cpp
     src/gui/updates_widget.cpp
+    src/gui/settings_widget.cpp
     src/gui/package_card.cpp
     src/gui/package_details_dialog.cpp
 )
@@ -62,6 +63,7 @@ set(HEADERS
     src/gui/search_widget.h
     src/gui/installed_widget.h
     src/gui/updates_widget.h
+    src/gui/settings_widget.h
     src/gui/package_card.h
     src/gui/package_details_dialog.h
 )

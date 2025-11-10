@@ -10,6 +10,7 @@ class HomeWidget;
 class SearchWidget;
 class InstalledWidget;
 class UpdatesWidget;
+class SettingsWidget;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -28,6 +29,7 @@ private:
     SearchWidget* m_searchWidget;
     InstalledWidget* m_installedWidget;
     UpdatesWidget* m_updatesWidget;
+    SettingsWidget* m_settingsWidget;
 };
 
 #endif // MAINWINDOW_H

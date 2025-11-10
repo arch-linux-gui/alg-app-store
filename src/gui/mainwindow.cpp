@@ -3,6 +3,7 @@
 #include "search_widget.h"
 #include "installed_widget.h"
 #include "updates_widget.h"
+#include "settings_widget.h"
 #include "../utils/logger.h"
 #include "../core/alpm_wrapper.h"
 #include <QMenuBar>
@@ -44,12 +45,21 @@ void MainWindow::setupUi() {
     m_searchWidget = new SearchWidget(this);
     m_installedWidget = new InstalledWidget(this);
     m_updatesWidget = new UpdatesWidget(this);
+    m_settingsWidget = new SettingsWidget(this);
     
     // Add tabs
     m_tabWidget->addTab(m_homeWidget, "Home");
     m_tabWidget->addTab(m_searchWidget, "Search");
     m_tabWidget->addTab(m_installedWidget, "Installed");
     m_tabWidget->addTab(m_updatesWidget, "Updates");
+    m_tabWidget->addTab(m_settingsWidget, "Settings");
+    
+    // Connect settings signals
+    connect(m_settingsWidget, &SettingsWidget::multilibStatusChanged,
+            m_searchWidget, &SearchWidget::updateRepositoryList);
+    
+    // Initialize search widget with current multilib state
+    m_searchWidget->updateRepositoryList(m_settingsWidget->isMultilibEnabled());
     
     m_tabWidget->setTabPosition(QTabWidget::North);
     m_tabWidget->setMovable(false);
