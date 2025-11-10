@@ -46,26 +46,13 @@ git clone https://github.com/arch-linux-gui/alg-app-store.git
 cd alg-app-store
 ```
 
-2. Create build directory:
+2. Run Build Script
 ```bash
-mkdir build
-cd build
+# This will create a build directory.
+./build.sh
 ```
 
-3. Configure with CMake:
-```bash
-cmake ..
-```
-
-4. Build:
-```bash
-make -j$(nproc)
-```
-
-5. Install (optional):
-```bash
-sudo make install
-```
+Binary will be in the build directory.
 
 ## Running
 
@@ -75,35 +62,12 @@ sudo make install
 ./build/alg-app-store
 ```
 
-### From System Installation
+### From System Installation (if installed)
 
 ```bash
 alg-app-store
 ```
 
-## Architecture
-
-### Directory Structure
-
-```
-src/
-├── core/              # Backend logic
-│   ├── alpm_wrapper.cpp/h        # libalpm wrapper
-│   ├── aur_helper.cpp/h          # AUR search/integration
-│   └── package_manager.cpp/h    # Package operations
-├── gui/               # Qt Widgets UI
-│   ├── mainwindow.cpp/h
-│   ├── home_widget.cpp/h
-│   ├── search_widget.cpp/h
-│   ├── installed_widget.cpp/h
-│   ├── updates_widget.cpp/h
-│   ├── package_card.cpp/h
-│   └── package_details_dialog.cpp/h
-├── utils/             # Utilities
-│   ├── logger.h                  # Logging system
-│   └── types.h                   # Data structures
-└── main.cpp           # Entry point
-```
 
 ### Key Components
 
