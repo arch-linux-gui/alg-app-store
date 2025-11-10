@@ -391,6 +391,10 @@ void UpdatesWidget::onOperationOutput(const QString& output) {
 }
 
 void UpdatesWidget::onOperationCompleted(bool success, const QString& message) {
+    // Refresh ALPM state so subsequent queries reflect the changes
+    AlpmWrapper::instance().release();
+    AlpmWrapper::instance().initialize();
+    
     hideProgress();
     
     m_updateAllButton->setEnabled(!m_updates.isEmpty());
@@ -414,6 +418,10 @@ void UpdatesWidget::onOperationCompleted(bool success, const QString& message) {
 }
 
 void UpdatesWidget::onOperationError(const QString& error) {
+    // Refresh ALPM state (best-effort)
+    AlpmWrapper::instance().release();
+    AlpmWrapper::instance().initialize();
+    
     hideProgress();
     
     m_updateAllButton->setEnabled(!m_updates.isEmpty());
