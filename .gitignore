@@ -1,0 +1,52 @@
+# Qt/C++ Build artifacts
+build/
+*.o
+*.so
+*.a
+*.user
+*.autosave
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Qt Creator
+*.pro.user
+*.pro.user.*
+
+# Executable
+alg-app-store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Compiled Object files
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Backup files
+*~
+*.bak
+*.backup
