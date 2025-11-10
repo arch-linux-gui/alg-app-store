@@ -41,6 +41,10 @@ void SettingsWidget::setupUi() {
     createRepositorySettings();
     mainLayout->addWidget(m_repositoryGroup);
     
+    // Maintenance Settings
+    createMaintenanceSettings();
+    mainLayout->addWidget(m_maintenanceGroup);
+    
     // Status label
     m_statusLabel = new QLabel(this);
     m_statusLabel->setAlignment(Qt::AlignCenter);
@@ -118,6 +122,51 @@ void SettingsWidget::createRepositorySettings() {
     repoLayout->addWidget(infoLabel);
     
     m_repositoryGroup->setLayout(repoLayout);
+}
+
+void SettingsWidget::createMaintenanceSettings() {
+    m_maintenanceGroup = new QGroupBox("Maintenance", this);
+    auto* maintenanceLayout = new QVBoxLayout(m_maintenanceGroup);
+    
+    // Description
+    auto* descLabel = new QLabel(
+        "System maintenance and troubleshooting tools.",
+        this);
+    descLabel->setWordWrap(true);
+    descLabel->setStyleSheet("QLabel { color: #666; margin-bottom: 10px; }");
+    maintenanceLayout->addWidget(descLabel);
+    
+    // Lock file section
+    auto* lockFileLayout = new QHBoxLayout();
+    
+    auto* lockFileLabel = new QLabel(
+        "Pacman Database Lock:",
+        this);
+    lockFileLabel->setStyleSheet("QLabel { font-weight: bold; }");
+    lockFileLayout->addWidget(lockFileLabel);
+    
+    lockFileLayout->addStretch();
+    
+    m_removeLockButton = new QPushButton("Remove Lock File", this);
+    m_removeLockButton->setMinimumWidth(150);
+    m_removeLockButton->setToolTip(
+        "Remove /var/lib/pacman/db.lck if pacman is stuck.\n"
+        "Only use this if you're sure no other pacman process is running.");
+    connect(m_removeLockButton, &QPushButton::clicked, this, &SettingsWidget::onRemoveLockClicked);
+    lockFileLayout->addWidget(m_removeLockButton);
+    
+    maintenanceLayout->addLayout(lockFileLayout);
+    
+    // Lock file info
+    auto* lockInfoLabel = new QLabel(
+        "If pacman was interrupted, it may leave a lock file that prevents other operations.\n"
+        "Remove it only if you're certain no package manager is currently running.",
+        this);
+    lockInfoLabel->setWordWrap(true);
+    lockInfoLabel->setStyleSheet("QLabel { color: #888; font-size: 11px; margin-top: 5px; margin-left: 10px; }");
+    maintenanceLayout->addWidget(lockInfoLabel);
+    
+    m_maintenanceGroup->setLayout(maintenanceLayout);
 }
 
 void SettingsWidget::loadCurrentSettings() {
@@ -401,4 +450,66 @@ bool SettingsWidget::isMultilibEnabled() const {
 
 void SettingsWidget::applySettings() {
     onApplyClicked();
+}
+
+void SettingsWidget::onRemoveLockClicked() {
+    QString lockFilePath = "/var/lib/pacman/db.lck";
+    
+    // Check if lock file exists
+    QFile lockFile(lockFilePath);
+    if (!lockFile.exists()) {
+        QMessageBox::information(this, "Lock File Not Found",
+            "The pacman lock file does not exist.\n"
+            "No action needed.");
+        return;
+    }
+    
+    // Show warning dialog with checkbox
+    QMessageBox msgBox(this);
+    msgBox.setIcon(QMessageBox::Warning);
+    msgBox.setWindowTitle("Remove Pacman Lock File");
+    msgBox.setText("Are you sure you want to remove the pacman lock file?");
+    msgBox.setInformativeText(
+        "This will remove: /var/lib/pacman/db.lck\n\n"
+        "WARNING: Only do this if you are certain that no other package manager "
+        "(pacman, yay, paru, etc.) is currently running.\n\n"
+        "Removing the lock file while a package operation is in progress can "
+        "corrupt your package database!");
+    
+    QCheckBox* confirmCheckbox = new QCheckBox("I understand the risks and confirm no package manager is running");
+    msgBox.setCheckBox(confirmCheckbox);
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::No);
+    
+    int ret = msgBox.exec();
+    
+    if (ret == QMessageBox::Yes && confirmCheckbox->isChecked()) {
+        // Use pkexec to remove the lock file with elevated privileges
+        QProcess process;
+        process.start("pkexec", QStringList() << "rm" << "-f" << lockFilePath);
+        process.waitForFinished(30000); // 30 second timeout
+        
+        if (process.exitCode() == 0) {
+            m_statusLabel->setText("Lock file removed successfully!");
+            m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
+            m_statusLabel->show();
+            Logger::info("Pacman lock file removed successfully");
+            
+            QMessageBox::information(this, "Success",
+                "The pacman lock file has been removed successfully.\n"
+                "You can now run package operations.");
+        } else {
+            m_statusLabel->setText("Failed to remove lock file. Check permissions.");
+            m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
+            m_statusLabel->show();
+            Logger::error("Failed to remove pacman lock file");
+            
+            QMessageBox::critical(this, "Error",
+                "Failed to remove the lock file.\n"
+                "You may need to run: sudo rm /var/lib/pacman/db.lck");
+        }
+    } else if (ret == QMessageBox::Yes && !confirmCheckbox->isChecked()) {
+        QMessageBox::warning(this, "Confirmation Required",
+            "You must check the confirmation box to proceed.");
+    }
 }

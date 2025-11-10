@@ -24,6 +24,7 @@ private:
     void setupUi();
     void loadCurrentSettings();
     void createRepositorySettings();
+    void createMaintenanceSettings();
     bool isMultilibEnabledInPacmanConf() const;
     bool enableMultilibInPacmanConf();
     bool disableMultilibInPacmanConf();
@@ -34,6 +35,10 @@ private:
     QCheckBox* m_coreRepoCheckbox;
     QCheckBox* m_extraRepoCheckbox;
     QCheckBox* m_multilibRepoCheckbox;
+    
+    // Maintenance settings
+    QGroupBox* m_maintenanceGroup;
+    QPushButton* m_removeLockButton;
     
     // Control buttons
     QPushButton* m_applyButton;
@@ -49,6 +54,7 @@ private slots:
     void onApplyClicked();
     void onRevertClicked();
     void onSettingsChanged();
+    void onRemoveLockClicked();
 };
 
 #endif // SETTINGS_WIDGET_H
