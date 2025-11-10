@@ -20,6 +20,9 @@ public:
     explicit SearchWidget(QWidget* parent = nullptr);
     ~SearchWidget() override = default;
     
+public slots:
+    void updateRepositoryList(bool multilibEnabled);
+    
 private:
     void setupUi();
     void performSearch();

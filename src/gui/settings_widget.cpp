@@ -1,5 +1,6 @@
 #include "settings_widget.h"
 #include "../utils/logger.h"
+#include "../core/alpm_wrapper.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
@@ -362,10 +363,16 @@ void SettingsWidget::onApplyClicked() {
                 if (process.exitCode() == 0) {
                     m_statusLabel->setText("Package databases synced successfully!");
                     Logger::info("Package databases synced after repository change");
+                    
+                    // Refresh ALPM databases to pick up the new repository
+                    AlpmWrapper::instance().refreshDatabases();
                 } else {
                     m_statusLabel->setText("Failed to sync package databases. Please run 'sudo pacman -Sy' manually.");
                     m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
                 }
+            } else {
+                // Even if they don't sync now, refresh ALPM to detect the new repo configuration
+                AlpmWrapper::instance().refreshDatabases();
             }
         } else {
             m_statusLabel->setText("Failed to apply settings. Please check permissions.");

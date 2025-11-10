@@ -23,6 +23,7 @@ public:
     
     bool initialize();
     void release();
+    void refreshDatabases();
     
     QVector<PackageInfo> searchPackages(const QString& query);
     QVector<PackageInfo> getInstalledPackages();
@@ -41,6 +42,7 @@ private:
     QStringList convertDependList(alpm_list_t* deps);
     void searchInDatabase(alpm_db_t* db, const QString& query, 
                          QVector<PackageInfo>& results);
+    QStringList getEnabledRepositories() const;
 };
 
 #endif // ALPM_WRAPPER_H

@@ -458,6 +458,8 @@ void PackageDetailsDialog::showProgress(const QString& message) {
     m_progressBar->setRange(0, 100);
     m_progressBar->setValue(0);
     m_progressWidget->show();
+    m_progressBar->show();
+    m_progressLabel->show();
     m_logViewer->clear();
     m_currentOperation = message;
     m_totalPackages = 0;
@@ -465,10 +467,12 @@ void PackageDetailsDialog::showProgress(const QString& message) {
 }
 
 void PackageDetailsDialog::hideProgress() {
-    m_progressWidget->hide();
-    m_logWidget->hide();
-    m_logVisible = false;
-    m_toggleLogButton->setText("Show Logs");
+    // Hide the progress bar and label, but keep the widget and toggle button visible
+    m_progressBar->hide();
+    m_progressLabel->hide();
+    // Don't hide m_progressWidget - keeps the toggle button visible
+    // Don't hide the log widget or reset log visibility
+    // This allows users to review logs after operation completes
 }
 
 void PackageDetailsDialog::toggleLogViewer() {

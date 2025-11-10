@@ -1,6 +1,8 @@
 #include "alpm_wrapper.h"
 #include "../utils/logger.h"
 #include <QDateTime>
+#include <QFile>
+#include <QTextStream>
 #include <algorithm>
 
 AlpmWrapper& AlpmWrapper::instance() {
@@ -32,14 +34,16 @@ bool AlpmWrapper::initialize() {
         return false;
     }
     
-    // Register sync databases
-    QStringList repos = {"core", "extra"};
+    // Register sync databases - read from enabled repositories
+    QStringList repos = getEnabledRepositories();
     for (const auto& repo : repos) {
         alpm_db_t* db = alpm_register_syncdb(m_handle, 
                                              repo.toStdString().c_str(),
                                              ALPM_SIG_USE_DEFAULT);
         if (!db) {
             Logger::warning(QString("Failed to register sync db: %1").arg(repo));
+        } else {
+            Logger::info(QString("Registered sync db: %1").arg(repo));
         }
     }
     
@@ -276,4 +280,69 @@ QStringList AlpmWrapper::convertDependList(alpm_list_t* deps) {
     }
     
     return result;
+}
+
+QStringList AlpmWrapper::getEnabledRepositories() const {
+    QStringList repos;
+    
+    // Read /etc/pacman.conf to find enabled repositories
+    QFile file("/etc/pacman.conf");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        Logger::error("Failed to open /etc/pacman.conf");
+        // Return default repositories
+        return {"core", "extra"};
+    }
+    
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        QString line = in.readLine().trimmed();
+        
+        // Check for repository sections (not commented out)
+        if (line.startsWith("[") && line.endsWith("]") && !line.startsWith("#")) {
+            QString repo = line.mid(1, line.length() - 2);
+            
+            // Filter out non-repository sections
+            if (repo != "options" && repo != "testing" && repo != "core-testing" && 
+                repo != "extra-testing" && repo != "multilib-testing") {
+                repos.append(repo);
+            }
+        }
+    }
+    
+    file.close();
+    
+    // Ensure core and extra are always present
+    if (!repos.contains("core")) {
+        repos.prepend("core");
+    }
+    if (!repos.contains("extra")) {
+        repos.insert(1, "extra");
+    }
+    
+    Logger::info(QString("Enabled repositories: %1").arg(repos.join(", ")));
+    return repos;
+}
+
+void AlpmWrapper::refreshDatabases() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    
+    if (!m_initialized) {
+        Logger::error("ALPM not initialized");
+        return;
+    }
+    
+    // Release current handle
+    if (m_handle) {
+        alpm_release(m_handle);
+        m_handle = nullptr;
+        m_syncDbs = nullptr;
+        m_initialized = false;
+    }
+    
+    // Re-initialize to pick up new repositories
+    m_mutex.unlock();
+    initialize();
+    m_mutex.lock();
+    
+    Logger::info("ALPM databases refreshed");
 }

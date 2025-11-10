@@ -219,3 +219,45 @@ void SearchWidget::onPackageClicked(const PackageInfo& info) {
     dialog->exec();
     dialog->deleteLater();
 }
+
+void SearchWidget::updateRepositoryList(bool multilibEnabled) {
+    // Save the current selection
+    int currentIndex = m_filterCombo->currentIndex();
+    QString currentFilter = m_filterCombo->itemData(currentIndex).toString();
+    
+    // Check if multilib already exists in the list
+    bool multilibExists = false;
+    for (int i = 0; i < m_filterCombo->count(); ++i) {
+        if (m_filterCombo->itemData(i).toString() == "multilib") {
+            multilibExists = true;
+            break;
+        }
+    }
+    
+    if (multilibEnabled && !multilibExists) {
+        // Add multilib to the dropdown (insert before AUR)
+        int aurIndex = m_filterCombo->findData("AUR");
+        if (aurIndex != -1) {
+            m_filterCombo->insertItem(aurIndex, "Multilib", "multilib");
+        } else {
+            m_filterCombo->addItem("Multilib", "multilib");
+        }
+        Logger::info("Added multilib repository to search filter");
+    } else if (!multilibEnabled && multilibExists) {
+        // Remove multilib from the dropdown
+        int multilibIndex = m_filterCombo->findData("multilib");
+        if (multilibIndex != -1) {
+            m_filterCombo->removeItem(multilibIndex);
+            Logger::info("Removed multilib repository from search filter");
+        }
+    }
+    
+    // Restore previous selection if it still exists
+    int newIndex = m_filterCombo->findData(currentFilter);
+    if (newIndex != -1) {
+        m_filterCombo->setCurrentIndex(newIndex);
+    } else {
+        // If previous selection was multilib and it's now removed, select "All"
+        m_filterCombo->setCurrentIndex(0);
+    }
+}
