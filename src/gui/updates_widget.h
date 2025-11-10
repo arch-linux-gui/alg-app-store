@@ -7,6 +7,8 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QVector>
+#include <QProgressBar>
+#include <QTextEdit>
 #include "../utils/types.h"
 
 class UpdateItem;
@@ -25,6 +27,9 @@ private:
     void displayUpdates(const QVector<UpdateInfo>& updates);
     void clearUpdates();
     QString formatSize(qint64 bytes);
+    void showProgress(const QString& message);
+    void hideProgress();
+    void toggleLogViewer();
     
     QScrollArea* m_scrollArea;
     QWidget* m_contentWidget;
@@ -34,11 +39,24 @@ private:
     QPushButton* m_updateAllButton;
     QPushButton* m_checkButton;
     
+    // Progress bar and log viewer
+    QWidget* m_progressWidget;
+    QProgressBar* m_progressBar;
+    QLabel* m_progressLabel;
+    QPushButton* m_toggleLogButton;
+    QWidget* m_logWidget;
+    QTextEdit* m_logViewer;
+    bool m_logVisible;
+    
     QVector<UpdateInfo> m_updates;
     
 private slots:
     void onUpdateAll();
     void onUpdateSingle(const QString& packageName);
+    void onOperationStarted(const QString& message);
+    void onOperationOutput(const QString& output);
+    void onOperationCompleted(bool success, const QString& message);
+    void onOperationError(const QString& error);
 };
 
 #endif // UPDATES_WIDGET_H

@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QMessageBox>
+#include <QTextCursor>
 #include <QtConcurrent>
 
 class UpdateItem : public QWidget {
@@ -86,19 +87,26 @@ UpdatesWidget::UpdatesWidget(QWidget* parent)
     , m_statusLabel(new QLabel(this))
     , m_countLabel(new QLabel(this))
     , m_updateAllButton(new QPushButton("Update All", this))
-    , m_checkButton(new QPushButton("Check for Updates", this)) {
+    , m_checkButton(new QPushButton("Check for Updates", this))
+    , m_progressWidget(new QWidget(this))
+    , m_progressBar(new QProgressBar(this))
+    , m_progressLabel(new QLabel(this))
+    , m_toggleLogButton(new QPushButton("Show Logs", this))
+    , m_logWidget(new QWidget(this))
+    , m_logViewer(new QTextEdit(this))
+    , m_logVisible(false) {
     
     setupUi();
     
+    // Connect to PackageManager signals
+    connect(&PackageManager::instance(), &PackageManager::operationStarted,
+            this, &UpdatesWidget::onOperationStarted);
+    connect(&PackageManager::instance(), &PackageManager::operationOutput,
+            this, &UpdatesWidget::onOperationOutput);
     connect(&PackageManager::instance(), &PackageManager::operationCompleted,
-            this, [this](bool success, const QString& message) {
-        if (success) {
-            QMessageBox::information(this, "Success", message);
-            checkForUpdates();
-        } else {
-            QMessageBox::warning(this, "Error", message);
-        }
-    });
+            this, &UpdatesWidget::onOperationCompleted);
+    connect(&PackageManager::instance(), &PackageManager::operationError,
+            this, &UpdatesWidget::onOperationError);
 }
 
 void UpdatesWidget::setupUi() {
@@ -146,6 +154,79 @@ void UpdatesWidget::setupUi() {
     m_contentLayout->addStretch();
     
     mainLayout->addWidget(m_scrollArea);
+    
+    // Progress bar section (hidden by default)
+    auto* progressLayout = new QVBoxLayout(m_progressWidget);
+    progressLayout->setContentsMargins(20, 0, 20, 20);
+    progressLayout->setSpacing(8);
+    
+    m_progressLabel->setStyleSheet("color: #a1a1aa; font-size: 12px;");
+    m_progressLabel->setAlignment(Qt::AlignCenter);
+    progressLayout->addWidget(m_progressLabel);
+    
+    m_progressBar->setMinimumHeight(20);
+    m_progressBar->setMaximumHeight(20);
+    m_progressBar->setTextVisible(true);
+    m_progressBar->setFormat("%p%");
+    m_progressBar->setStyleSheet(
+        "QProgressBar {"
+        "    border: none;"
+        "    border-radius: 4px;"
+        "    background-color: #27272a;"
+        "    color: #fafafa;"
+        "    text-align: center;"
+        "    font-size: 11px;"
+        "}"
+        "QProgressBar::chunk {"
+        "    border-radius: 4px;"
+        "    background-color: #3b82f6;"
+        "}"
+    );
+    progressLayout->addWidget(m_progressBar);
+    
+    // Toggle log button
+    m_toggleLogButton->setStyleSheet(
+        "QPushButton {"
+        "    background: none;"
+        "    border: none;"
+        "    color: #3b82f6;"
+        "    text-decoration: underline;"
+        "    font-size: 11px;"
+        "    padding: 4px;"
+        "}"
+        "QPushButton:hover {"
+        "    color: #60a5fa;"
+        "}"
+    );
+    connect(m_toggleLogButton, &QPushButton::clicked, this, &UpdatesWidget::toggleLogViewer);
+    progressLayout->addWidget(m_toggleLogButton, 0, Qt::AlignCenter);
+    
+    m_progressWidget->hide();
+    mainLayout->addWidget(m_progressWidget, 0);
+    
+    // Log viewer section (hidden by default)
+    auto* logLayout = new QVBoxLayout(m_logWidget);
+    logLayout->setContentsMargins(20, 0, 20, 20);
+    logLayout->setSpacing(8);
+    
+    m_logViewer->setReadOnly(true);
+    m_logViewer->setMaximumHeight(200);
+    m_logViewer->setStyleSheet(
+        "QTextEdit {"
+        "    background-color: #18181b;"
+        "    border: 1px solid #27272a;"
+        "    border-radius: 6px;"
+        "    color: #d4d4d8;"
+        "    font-family: 'Consolas', 'Monaco', monospace;"
+        "    font-size: 11px;"
+        "    padding: 8px;"
+        "}"
+    );
+    logLayout->addWidget(m_logViewer);
+    
+    m_logWidget->hide();
+    mainLayout->addWidget(m_logWidget, 0);
+    
     setLayout(mainLayout);
 }
 
@@ -243,6 +324,111 @@ QString UpdatesWidget::formatSize(qint64 bytes) {
         return QString("%1 KB").arg(bytes / static_cast<double>(KB), 0, 'f', 0);
     }
     return QString("%1 B").arg(bytes);
+}
+
+void UpdatesWidget::showProgress(const QString& message) {
+    m_progressLabel->setText(message);
+    m_progressBar->setRange(0, 100);
+    m_progressBar->setValue(0);
+    m_progressWidget->show();
+    m_progressBar->show();
+    m_progressLabel->show();
+    m_logViewer->clear();
+}
+
+void UpdatesWidget::hideProgress() {
+    // Hide the progress bar and label, but keep the widget and toggle button visible
+    m_progressBar->hide();
+    m_progressLabel->hide();
+    // Don't hide m_progressWidget - keeps the toggle button visible
+    // Don't hide the log widget or reset log visibility
+    // This allows users to review logs after operation completes
+}
+
+void UpdatesWidget::toggleLogViewer() {
+    m_logVisible = !m_logVisible;
+    if (m_logVisible) {
+        m_logWidget->show();
+        m_toggleLogButton->setText("Hide Logs");
+    } else {
+        m_logWidget->hide();
+        m_toggleLogButton->setText("Show Logs");
+    }
+}
+
+void UpdatesWidget::onOperationStarted(const QString& message) {
+    showProgress(message);
+    m_updateAllButton->setEnabled(false);
+    m_checkButton->setEnabled(false);
+    
+    // Disable all individual update buttons
+    for (int i = 0; i < m_contentLayout->count() - 1; ++i) {
+        if (auto* item = m_contentLayout->itemAt(i)) {
+            if (auto* widget = item->widget()) {
+                widget->setEnabled(false);
+            }
+        }
+    }
+}
+
+void UpdatesWidget::onOperationOutput(const QString& output) {
+    m_logViewer->append(output);
+    
+    // Auto-scroll to bottom
+    auto cursor = m_logViewer->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    m_logViewer->setTextCursor(cursor);
+    
+    // Try to parse progress information from output
+    // This is a simple implementation - could be enhanced
+    if (output.contains("downloading", Qt::CaseInsensitive)) {
+        m_progressLabel->setText("Downloading packages...");
+        m_progressBar->setRange(0, 0); // Indeterminate
+    } else if (output.contains("installing", Qt::CaseInsensitive)) {
+        m_progressLabel->setText("Installing packages...");
+        m_progressBar->setRange(0, 0); // Indeterminate
+    }
+}
+
+void UpdatesWidget::onOperationCompleted(bool success, const QString& message) {
+    hideProgress();
+    
+    m_updateAllButton->setEnabled(!m_updates.isEmpty());
+    m_checkButton->setEnabled(true);
+    
+    // Re-enable all individual update buttons
+    for (int i = 0; i < m_contentLayout->count() - 1; ++i) {
+        if (auto* item = m_contentLayout->itemAt(i)) {
+            if (auto* widget = item->widget()) {
+                widget->setEnabled(true);
+            }
+        }
+    }
+    
+    if (success) {
+        QMessageBox::information(this, "Success", message);
+        checkForUpdates();
+    } else {
+        QMessageBox::warning(this, "Operation Failed", message);
+    }
+}
+
+void UpdatesWidget::onOperationError(const QString& error) {
+    hideProgress();
+    
+    m_updateAllButton->setEnabled(!m_updates.isEmpty());
+    m_checkButton->setEnabled(true);
+    
+    // Re-enable all individual update buttons
+    for (int i = 0; i < m_contentLayout->count() - 1; ++i) {
+        if (auto* item = m_contentLayout->itemAt(i)) {
+            if (auto* widget = item->widget()) {
+                widget->setEnabled(true);
+            }
+        }
+    }
+    
+    QMessageBox::critical(this, "Error", error);
 }
 
 #include "updates_widget.moc"
