@@ -1,6 +1,7 @@
 #include "package_manager.h"
 #include "../utils/logger.h"
 #include <QStandardPaths>
+#include <QFile>
 
 PackageManager& PackageManager::instance() {
     static PackageManager instance;
@@ -68,13 +69,13 @@ void PackageManager::installPackage(const QString& packageName, const QString& r
     Logger::info(QString("Installing package: %1 from %2").arg(packageName, repository.isEmpty() ? "default" : repository));
     emit operationStarted(QString("Installing %1...").arg(packageName));
     
-    // AUR packages should not use pkexec (must run as regular user)
+    // Determine if this is an AUR package
     bool isAUR = repository.toLower() == "aur";
     QString helper = getHelperName();
     
     QString command;
     if (isAUR && (m_helper == Helper::Yay || m_helper == Helper::Paru)) {
-        // AUR helpers run as regular user
+        // AUR packages - run helper as regular user (no pkexec)
         command = QString("%1 -S %2 --noconfirm").arg(helper, packageName);
     } else {
         // Official repos need root access
@@ -102,13 +103,13 @@ void PackageManager::updatePackage(const QString& packageName, const QString& re
     Logger::info(QString("Updating package: %1 from %2").arg(packageName, repository.isEmpty() ? "default" : repository));
     emit operationStarted(QString("Updating %1...").arg(packageName));
     
-    // AUR packages should not use pkexec (must run as regular user)
+    // Determine if this is an AUR package
     bool isAUR = repository.toLower() == "aur";
     QString helper = getHelperName();
     
     QString command;
     if (isAUR && (m_helper == Helper::Yay || m_helper == Helper::Paru)) {
-        // AUR helpers run as regular user
+        // AUR packages - run helper as regular user (no pkexec)
         command = QString("%1 -S %2 --noconfirm").arg(helper, packageName);
     } else {
         // Official repos need root access
