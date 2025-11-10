@@ -48,6 +48,7 @@ void InstalledWidget::setupUi() {
     // Filter
     m_filterInput->setPlaceholderText("Filter installed packages...");
     m_filterInput->setMinimumHeight(35);
+    m_filterInput->setClearButtonEnabled(true);
     connect(m_filterInput, &QLineEdit::textChanged, 
             this, &InstalledWidget::onFilterTextChanged);
     mainLayout->addWidget(m_filterInput);

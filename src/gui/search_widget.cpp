@@ -43,6 +43,7 @@ void SearchWidget::setupUi() {
     
     m_searchInput->setPlaceholderText("Search for packages...");
     m_searchInput->setMinimumHeight(35);
+    m_searchInput->setClearButtonEnabled(true);
     connect(m_searchInput, &QLineEdit::returnPressed, this, &SearchWidget::onSearchClicked);
     searchLayout->addWidget(m_searchInput, 1);
     
