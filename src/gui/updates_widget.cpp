@@ -81,6 +81,7 @@ private:
 
 UpdatesWidget::UpdatesWidget(QWidget* parent)
     : QWidget(parent)
+    , m_searchInput(new QLineEdit(this))
     , m_scrollArea(new QScrollArea(this))
     , m_contentWidget(new QWidget())
     , m_contentLayout(new QVBoxLayout(m_contentWidget))
@@ -138,6 +139,14 @@ void UpdatesWidget::setupUi() {
     headerLayout->addWidget(m_updateAllButton);
     
     mainLayout->addLayout(headerLayout);
+    
+    // Search bar
+    m_searchInput->setPlaceholderText("Search updates...");
+    m_searchInput->setMinimumHeight(35);
+    m_searchInput->setClearButtonEnabled(true);
+    m_searchInput->setEnabled(false); // Disabled until updates are loaded
+    connect(m_searchInput, &QLineEdit::textChanged, this, &UpdatesWidget::onSearchTextChanged);
+    mainLayout->addWidget(m_searchInput);
     
     // Status label
     m_statusLabel->setAlignment(Qt::AlignCenter);
@@ -249,6 +258,7 @@ void UpdatesWidget::checkForUpdates() {
         
         QMetaObject::invokeMethod(this, [this, updates]() {
             m_updates = updates;
+            m_filteredUpdates = updates;
             
             m_checkButton->setEnabled(true);
             m_checkButton->setText("Check for Updates");
@@ -256,12 +266,21 @@ void UpdatesWidget::checkForUpdates() {
             if (updates.isEmpty()) {
                 m_statusLabel->setText("Your system is up to date!");
                 m_countLabel->clear();
+                m_searchInput->setEnabled(false);
             } else {
                 m_statusLabel->hide();
                 m_countLabel->setText(QString("%1 updates available")
                                      .arg(updates.size()));
                 m_updateAllButton->setEnabled(true);
-                displayUpdates(updates);
+                m_searchInput->setEnabled(true);
+                
+                // Apply any existing search filter
+                QString searchText = m_searchInput->text();
+                if (!searchText.isEmpty()) {
+                    filterUpdates(searchText);
+                } else {
+                    displayUpdates(updates);
+                }
             }
             
             Logger::info(QString("Found %1 updates").arg(updates.size()));
@@ -288,6 +307,37 @@ void UpdatesWidget::clearUpdates() {
         }
         delete item;
     }
+}
+
+void UpdatesWidget::filterUpdates(const QString& searchText) {
+    if (searchText.isEmpty()) {
+        m_filteredUpdates = m_updates;
+        displayUpdates(m_filteredUpdates);
+        m_countLabel->setText(QString("%1 updates available").arg(m_updates.size()));
+        return;
+    }
+    
+    QString lowerSearch = searchText.toLower();
+    m_filteredUpdates.clear();
+    
+    for (const auto& update : m_updates) {
+        if (update.name.toLower().contains(lowerSearch)) {
+            m_filteredUpdates.append(update);
+        }
+    }
+    
+    displayUpdates(m_filteredUpdates);
+    
+    // Update count label to show filtered count
+    if (m_filteredUpdates.size() == m_updates.size()) {
+        m_countLabel->setText(QString("%1 updates available").arg(m_updates.size()));
+    } else {
+        m_countLabel->setText(QString("%1 of %2 updates").arg(m_filteredUpdates.size()).arg(m_updates.size()));
+    }
+}
+
+void UpdatesWidget::onSearchTextChanged(const QString& text) {
+    filterUpdates(text);
 }
 
 void UpdatesWidget::onUpdateAll() {
