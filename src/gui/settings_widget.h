@@ -24,10 +24,14 @@ private:
     void setupUi();
     void loadCurrentSettings();
     void createRepositorySettings();
+    void createChaoticAurSettings();
     void createMaintenanceSettings();
     bool isMultilibEnabledInPacmanConf() const;
+    bool isChaoticAurEnabledInPacmanConf() const;
     bool enableMultilibInPacmanConf();
     bool disableMultilibInPacmanConf();
+    bool enableChaoticAurInPacmanConf();
+    bool disableChaoticAurInPacmanConf();
     void applySettings();
     
     // Repository settings
@@ -35,6 +39,12 @@ private:
     QCheckBox* m_coreRepoCheckbox;
     QCheckBox* m_extraRepoCheckbox;
     QCheckBox* m_multilibRepoCheckbox;
+    QCheckBox* m_chaoticAurCheckbox;
+    
+    // Chaotic-AUR setup
+    QGroupBox* m_chaoticAurGroup;
+    QPushButton* m_setupChaoticButton;
+    QPushButton* m_removeChaoticButton;
     
     // Maintenance settings
     QGroupBox* m_maintenanceGroup;
@@ -49,11 +59,14 @@ private:
     
     // Track original state
     bool m_originalMultilibState;
+    bool m_originalChaoticAurState;
     
 private slots:
     void onApplyClicked();
     void onRevertClicked();
     void onSettingsChanged();
+    void onSetupChaoticClicked();
+    void onRemoveChaoticClicked();
     void onRemoveLockClicked();
 };
 

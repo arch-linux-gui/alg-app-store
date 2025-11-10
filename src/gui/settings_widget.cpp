@@ -14,10 +14,15 @@ SettingsWidget::SettingsWidget(QWidget* parent)
     , m_coreRepoCheckbox(nullptr)
     , m_extraRepoCheckbox(nullptr)
     , m_multilibRepoCheckbox(nullptr)
+    , m_chaoticAurCheckbox(nullptr)
+    , m_chaoticAurGroup(nullptr)
+    , m_setupChaoticButton(nullptr)
+    , m_removeChaoticButton(nullptr)
     , m_applyButton(nullptr)
     , m_revertButton(nullptr)
     , m_statusLabel(nullptr)
-    , m_originalMultilibState(false) {
+    , m_originalMultilibState(false)
+    , m_originalChaoticAurState(false) {
     
     setupUi();
     loadCurrentSettings();
@@ -40,6 +45,10 @@ void SettingsWidget::setupUi() {
     // Repository Settings
     createRepositorySettings();
     mainLayout->addWidget(m_repositoryGroup);
+    
+    // Chaotic-AUR Setup
+    createChaoticAurSettings();
+    mainLayout->addWidget(m_chaoticAurGroup);
     
     // Maintenance Settings
     createMaintenanceSettings();
@@ -112,6 +121,16 @@ void SettingsWidget::createRepositorySettings() {
             this, &SettingsWidget::onSettingsChanged);
     repoLayout->addWidget(m_multilibRepoCheckbox);
     
+    // Chaotic-AUR repository (optional, can be enabled/disabled)
+    m_chaoticAurCheckbox = new QCheckBox("Chaotic-AUR - Pre-built AUR packages", this);
+    m_chaoticAurCheckbox->setToolTip(
+        "Enable chaotic-aur repository for pre-built AUR packages.\n"
+        "This modifies /etc/pacman.conf and requires administrator privileges.\n"
+        "Note: chaotic-keyring and chaotic-mirrorlist must be installed first.");
+    connect(m_chaoticAurCheckbox, &QCheckBox::checkStateChanged, 
+            this, &SettingsWidget::onSettingsChanged);
+    repoLayout->addWidget(m_chaoticAurCheckbox);
+    
     // Info label
     auto* infoLabel = new QLabel(
         "Note: Changes to repositories require modifying system configuration files "
@@ -122,6 +141,79 @@ void SettingsWidget::createRepositorySettings() {
     repoLayout->addWidget(infoLabel);
     
     m_repositoryGroup->setLayout(repoLayout);
+}
+
+void SettingsWidget::createChaoticAurSettings() {
+    m_chaoticAurGroup = new QGroupBox("Chaotic-AUR Setup", this);
+    auto* chaoticLayout = new QVBoxLayout(m_chaoticAurGroup);
+    
+    // Description
+    auto* descLabel = new QLabel(
+        "Chaotic-AUR provides pre-built AUR packages, making installation faster and easier.\n"
+        "Setup requires installing the keyring and mirrorlist packages.",
+        this);
+    descLabel->setWordWrap(true);
+    descLabel->setStyleSheet("QLabel { color: #666; margin-bottom: 10px; }");
+    chaoticLayout->addWidget(descLabel);
+    
+    // Setup button section
+    auto* setupLayout = new QHBoxLayout();
+    
+    auto* setupLabel = new QLabel("Install Chaotic-AUR:", this);
+    setupLabel->setStyleSheet("QLabel { font-weight: bold; }");
+    setupLayout->addWidget(setupLabel);
+    
+    setupLayout->addStretch();
+    
+    m_setupChaoticButton = new QPushButton("Setup Chaotic-AUR", this);
+    m_setupChaoticButton->setMinimumWidth(150);
+    m_setupChaoticButton->setToolTip(
+        "Install chaotic-keyring and chaotic-mirrorlist packages.\n"
+        "This will enable access to pre-built AUR packages.");
+    connect(m_setupChaoticButton, &QPushButton::clicked, this, &SettingsWidget::onSetupChaoticClicked);
+    setupLayout->addWidget(m_setupChaoticButton);
+    
+    chaoticLayout->addLayout(setupLayout);
+    
+    // Setup info
+    auto* setupInfoLabel = new QLabel(
+        "This will install chaotic-keyring and chaotic-mirrorlist from the official Chaotic-AUR repository.",
+        this);
+    setupInfoLabel->setWordWrap(true);
+    setupInfoLabel->setStyleSheet("QLabel { color: #888; font-size: 11px; margin-top: 5px; margin-left: 10px; }");
+    chaoticLayout->addWidget(setupInfoLabel);
+    
+    // Spacer
+    chaoticLayout->addSpacing(10);
+    
+    // Remove button section
+    auto* removeLayout = new QHBoxLayout();
+    
+    auto* removeLabel = new QLabel("Remove Chaotic-AUR:", this);
+    removeLabel->setStyleSheet("QLabel { font-weight: bold; }");
+    removeLayout->addWidget(removeLabel);
+    
+    removeLayout->addStretch();
+    
+    m_removeChaoticButton = new QPushButton("Remove Chaotic-AUR", this);
+    m_removeChaoticButton->setMinimumWidth(150);
+    m_removeChaoticButton->setToolTip(
+        "Remove chaotic-keyring and chaotic-mirrorlist packages.\n"
+        "You may need to manually remove the repository from /etc/pacman.conf");
+    connect(m_removeChaoticButton, &QPushButton::clicked, this, &SettingsWidget::onRemoveChaoticClicked);
+    removeLayout->addWidget(m_removeChaoticButton);
+    
+    chaoticLayout->addLayout(removeLayout);
+    
+    // Remove info
+    auto* removeInfoLabel = new QLabel(
+        "This will remove the Chaotic-AUR packages. You need to uncheck the Chaotic-AUR option above or manually edit /etc/pacman.conf to remove the repository configuration.",
+        this);
+    removeInfoLabel->setWordWrap(true);
+    removeInfoLabel->setStyleSheet("QLabel { color: #888; font-size: 11px; margin-top: 5px; margin-left: 10px; }");
+    chaoticLayout->addWidget(removeInfoLabel);
+    
+    m_chaoticAurGroup->setLayout(chaoticLayout);
 }
 
 void SettingsWidget::createMaintenanceSettings() {
@@ -175,7 +267,14 @@ void SettingsWidget::loadCurrentSettings() {
     m_multilibRepoCheckbox->setChecked(multilibEnabled);
     m_originalMultilibState = multilibEnabled;
     
-    Logger::info(QString("Loaded settings: multilib=%1").arg(multilibEnabled ? "enabled" : "disabled"));
+    // Check if chaotic-aur is enabled
+    bool chaoticAurEnabled = isChaoticAurEnabledInPacmanConf();
+    m_chaoticAurCheckbox->setChecked(chaoticAurEnabled);
+    m_originalChaoticAurState = chaoticAurEnabled;
+    
+    Logger::info(QString("Loaded settings: multilib=%1, chaotic-aur=%2")
+                 .arg(multilibEnabled ? "enabled" : "disabled")
+                 .arg(chaoticAurEnabled ? "enabled" : "disabled"));
 }
 
 bool SettingsWidget::isMultilibEnabledInPacmanConf() const {
@@ -208,6 +307,44 @@ bool SettingsWidget::isMultilibEnabledInPacmanConf() const {
         
         // If we hit another section, stop
         if (inMultilibSection && line.startsWith("[") && line != "[multilib]") {
+            break;
+        }
+    }
+    
+    file.close();
+    return false;
+}
+
+bool SettingsWidget::isChaoticAurEnabledInPacmanConf() const {
+    QFile file("/etc/pacman.conf");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        Logger::error("Failed to open /etc/pacman.conf for reading");
+        return false;
+    }
+    
+    QTextStream in(&file);
+    bool inChaoticAurSection = false;
+    
+    while (!in.atEnd()) {
+        QString line = in.readLine().trimmed();
+        
+        // Check for [chaotic-aur] section header
+        if (line == "[chaotic-aur]") {
+            inChaoticAurSection = true;
+            continue;
+        }
+        
+        // If we found [chaotic-aur] section, check if it's not commented
+        if (inChaoticAurSection && !line.isEmpty() && !line.startsWith("#")) {
+            // If we find Include or Server directive, chaotic-aur is enabled
+            if (line.startsWith("Include") || line.startsWith("Server")) {
+                file.close();
+                return true;
+            }
+        }
+        
+        // If we hit another section, stop
+        if (inChaoticAurSection && line.startsWith("[") && line != "[chaotic-aur]") {
             break;
         }
     }
@@ -344,9 +481,150 @@ bool SettingsWidget::disableMultilibInPacmanConf() {
     return true;
 }
 
+bool SettingsWidget::enableChaoticAurInPacmanConf() {
+    QFile file("/etc/pacman.conf");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        Logger::error("Failed to open /etc/pacman.conf for reading");
+        return false;
+    }
+    
+    QStringList lines;
+    QTextStream in(&file);
+    bool chaoticAurSectionFound = false;
+    bool chaoticAurExists = false;
+    
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        
+        // Check if chaotic-aur section already exists (uncommented)
+        if (line.trimmed() == "[chaotic-aur]") {
+            chaoticAurExists = true;
+        }
+        
+        // Check if this is a commented [chaotic-aur] section
+        if (line.trimmed() == "#[chaotic-aur]") {
+            lines.append("[chaotic-aur]");
+            chaoticAurSectionFound = true;
+        } 
+        // Check if the Include/Server line in chaotic-aur section is commented
+        else if (chaoticAurSectionFound && line.trimmed().startsWith("#") && 
+                 (line.contains("Include") || line.contains("Server"))) {
+            lines.append(line.mid(line.indexOf('#') + 1)); // Remove the # comment character
+            chaoticAurSectionFound = false; // Reset flag after processing
+        }
+        else {
+            lines.append(line);
+        }
+    }
+    file.close();
+    
+    // If chaotic-aur section doesn't exist at all, add it
+    if (!chaoticAurExists && !chaoticAurSectionFound) {
+        lines.append("");
+        lines.append("[chaotic-aur]");
+        lines.append("Include = /etc/pacman.d/chaotic-mirrorlist");
+    }
+    
+    // Write back to file using pkexec for elevated privileges
+    QString tempFile = "/tmp/pacman.conf.tmp";
+    QFile temp(tempFile);
+    if (!temp.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        Logger::error("Failed to create temporary file");
+        return false;
+    }
+    
+    QTextStream out(&temp);
+    for (const QString& line : lines) {
+        out << line << "\n";
+    }
+    temp.close();
+    
+    // Use pkexec to copy the file with elevated privileges
+    QProcess process;
+    process.start("pkexec", QStringList() << "cp" << tempFile << "/etc/pacman.conf");
+    process.waitForFinished(30000); // 30 second timeout
+    
+    if (process.exitCode() != 0) {
+        Logger::error("Failed to update pacman.conf with elevated privileges");
+        QFile::remove(tempFile);
+        return false;
+    }
+    
+    QFile::remove(tempFile);
+    Logger::info("Successfully enabled chaotic-aur repository");
+    return true;
+}
+
+bool SettingsWidget::disableChaoticAurInPacmanConf() {
+    QFile file("/etc/pacman.conf");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        Logger::error("Failed to open /etc/pacman.conf for reading");
+        return false;
+    }
+    
+    QStringList lines;
+    QTextStream in(&file);
+    bool inChaoticAurSection = false;
+    
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        QString trimmedLine = line.trimmed();
+        
+        // Check if this is [chaotic-aur] section
+        if (trimmedLine == "[chaotic-aur]") {
+            lines.append("#[chaotic-aur]");
+            inChaoticAurSection = true;
+        }
+        // Check if we're in chaotic-aur section and this is the Include/Server line
+        else if (inChaoticAurSection && !trimmedLine.startsWith("#") &&
+                 (trimmedLine.startsWith("Include") || trimmedLine.startsWith("Server"))) {
+            lines.append("#" + line);
+        }
+        // Check if we hit another section
+        else if (trimmedLine.startsWith("[") && trimmedLine != "[chaotic-aur]") {
+            lines.append(line);
+            inChaoticAurSection = false;
+        }
+        else {
+            lines.append(line);
+        }
+    }
+    file.close();
+    
+    // Write back to file using pkexec for elevated privileges
+    QString tempFile = "/tmp/pacman.conf.tmp";
+    QFile temp(tempFile);
+    if (!temp.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        Logger::error("Failed to create temporary file");
+        return false;
+    }
+    
+    QTextStream out(&temp);
+    for (const QString& line : lines) {
+        out << line << "\n";
+    }
+    temp.close();
+    
+    // Use pkexec to copy the file with elevated privileges
+    QProcess process;
+    process.start("pkexec", QStringList() << "cp" << tempFile << "/etc/pacman.conf");
+    process.waitForFinished(30000); // 30 second timeout
+    
+    if (process.exitCode() != 0) {
+        Logger::error("Failed to update pacman.conf with elevated privileges");
+        QFile::remove(tempFile);
+        return false;
+    }
+    
+    QFile::remove(tempFile);
+    Logger::info("Successfully disabled chaotic-aur repository");
+    return true;
+}
+
 void SettingsWidget::onSettingsChanged() {
     // Enable apply and revert buttons when settings change
-    bool hasChanges = (m_multilibRepoCheckbox->isChecked() != m_originalMultilibState);
+    bool hasChanges = (m_multilibRepoCheckbox->isChecked() != m_originalMultilibState) ||
+                      (m_chaoticAurCheckbox->isChecked() != m_originalChaoticAurState);
     m_applyButton->setEnabled(hasChanges);
     m_revertButton->setEnabled(hasChanges);
     m_statusLabel->hide();
@@ -354,8 +632,11 @@ void SettingsWidget::onSettingsChanged() {
 
 void SettingsWidget::onApplyClicked() {
     bool currentMultilibState = m_multilibRepoCheckbox->isChecked();
-    bool success = false;
+    bool currentChaoticAurState = m_chaoticAurCheckbox->isChecked();
+    bool success = true;
+    bool changesApplied = false;
     
+    // Handle multilib changes
     if (currentMultilibState != m_originalMultilibState) {
         // Show confirmation dialog
         QString message;
@@ -387,17 +668,65 @@ void SettingsWidget::onApplyClicked() {
         
         if (success) {
             m_originalMultilibState = currentMultilibState;
-            m_statusLabel->setText("Settings applied successfully! Please sync package databases.");
-            m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
-            m_statusLabel->show();
-            
-            m_applyButton->setEnabled(false);
-            m_revertButton->setEnabled(false);
+            changesApplied = true;
             
             // Emit signal to notify other widgets
             emit multilibStatusChanged(currentMultilibState);
-            
-            // Suggest database sync
+        } else {
+            success = false;
+        }
+    }
+    
+    // Handle chaotic-aur changes
+    if (currentChaoticAurState != m_originalChaoticAurState) {
+        // Show confirmation dialog
+        QString message;
+        if (currentChaoticAurState) {
+            message = "This will enable the chaotic-aur repository by modifying /etc/pacman.conf.\n"
+                     "You will be prompted for administrator privileges.\n\n"
+                     "Note: Make sure chaotic-keyring and chaotic-mirrorlist are installed first.\n\n"
+                     "After enabling, you should run 'sudo pacman -Sy' to sync the databases.\n\n"
+                     "Do you want to continue?";
+        } else {
+            message = "This will disable the chaotic-aur repository by modifying /etc/pacman.conf.\n"
+                     "You will be prompted for administrator privileges.\n\n"
+                     "Do you want to continue?";
+        }
+        
+        auto reply = QMessageBox::question(this, "Confirm Repository Change", 
+                                          message,
+                                          QMessageBox::Yes | QMessageBox::No);
+        
+        if (reply != QMessageBox::Yes) {
+            return;
+        }
+        
+        // Apply the change
+        bool chaoticSuccess = false;
+        if (currentChaoticAurState) {
+            chaoticSuccess = enableChaoticAurInPacmanConf();
+        } else {
+            chaoticSuccess = disableChaoticAurInPacmanConf();
+        }
+        
+        if (chaoticSuccess) {
+            m_originalChaoticAurState = currentChaoticAurState;
+            changesApplied = true;
+        } else {
+            success = false;
+        }
+    }
+    
+    // Show results and offer database sync if changes were applied
+    if (changesApplied && success) {
+        m_statusLabel->setText("Settings applied successfully! Please sync package databases.");
+        m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
+        m_statusLabel->show();
+        
+        m_applyButton->setEnabled(false);
+        m_revertButton->setEnabled(false);
+        
+        // Suggest database sync
             auto reply = QMessageBox::question(this, "Sync Package Database",
                                               "Would you like to sync the package database now?\n"
                                               "(This will run 'pkexec pacman -Sy')",
@@ -423,17 +752,17 @@ void SettingsWidget::onApplyClicked() {
                 // Even if they don't sync now, refresh ALPM to detect the new repo configuration
                 AlpmWrapper::instance().refreshDatabases();
             }
-        } else {
-            m_statusLabel->setText("Failed to apply settings. Please check permissions.");
-            m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
-            m_statusLabel->show();
-        }
+    } else if (!success) {
+        m_statusLabel->setText("Failed to apply settings. Please check permissions.");
+        m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
+        m_statusLabel->show();
     }
 }
 
 void SettingsWidget::onRevertClicked() {
     // Revert to original state
     m_multilibRepoCheckbox->setChecked(m_originalMultilibState);
+    m_chaoticAurCheckbox->setChecked(m_originalChaoticAurState);
     m_applyButton->setEnabled(false);
     m_revertButton->setEnabled(false);
     m_statusLabel->setText("Changes reverted");
@@ -512,4 +841,123 @@ void SettingsWidget::onRemoveLockClicked() {
         QMessageBox::warning(this, "Confirmation Required",
             "You must check the confirmation box to proceed.");
     }
+}
+
+void SettingsWidget::onSetupChaoticClicked() {
+    QMessageBox msgBox(this);
+    msgBox.setIcon(QMessageBox::Question);
+    msgBox.setWindowTitle("Setup Chaotic-AUR");
+    msgBox.setText("Install Chaotic-AUR repository?");
+    msgBox.setInformativeText(
+        "This will install:\n"
+        "• chaotic-keyring\n"
+        "• chaotic-mirrorlist\n\n"
+        "These packages are required to use the Chaotic-AUR repository.\n"
+        "You may need to manually add the repository to /etc/pacman.conf if not already configured.");
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::Yes);
+    
+    if (msgBox.exec() != QMessageBox::Yes) {
+        return;
+    }
+    
+    m_statusLabel->setText("Installing Chaotic-AUR packages...");
+    m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
+    m_statusLabel->show();
+    m_setupChaoticButton->setEnabled(false);
+    
+    // Install chaotic-keyring and chaotic-mirrorlist
+    QProcess* process = new QProcess(this);
+    connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, [this, process](int exitCode, QProcess::ExitStatus exitStatus) {
+        process->deleteLater();
+        m_setupChaoticButton->setEnabled(true);
+        
+        if (exitCode == 0 && exitStatus == QProcess::NormalExit) {
+            m_statusLabel->setText("Chaotic-AUR packages installed successfully!");
+            m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
+            m_statusLabel->show();
+            Logger::info("Chaotic-AUR packages installed successfully");
+            
+            // Refresh the chaotic-aur checkbox status
+            loadCurrentSettings();
+            
+            QMessageBox::information(this, "Success",
+                "Chaotic-AUR packages installed successfully!\n\n"
+                "If the repository is not yet configured, you may need to add it to /etc/pacman.conf:\n\n"
+                "[chaotic-aur]\n"
+                "Include = /etc/pacman.d/chaotic-mirrorlist");
+        } else {
+            m_statusLabel->setText("Failed to install Chaotic-AUR packages.");
+            m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
+            m_statusLabel->show();
+            Logger::error("Failed to install Chaotic-AUR packages");
+            
+            QMessageBox::critical(this, "Error",
+                "Failed to install Chaotic-AUR packages.\n"
+                "Please check the logs for details.");
+        }
+    });
+    
+    process->start("pkexec", QStringList() << "pacman" << "-S" << "--noconfirm" 
+                   << "chaotic-keyring" << "chaotic-mirrorlist");
+}
+
+void SettingsWidget::onRemoveChaoticClicked() {
+    QMessageBox msgBox(this);
+    msgBox.setIcon(QMessageBox::Warning);
+    msgBox.setWindowTitle("Remove Chaotic-AUR");
+    msgBox.setText("Remove Chaotic-AUR repository?");
+    msgBox.setInformativeText(
+        "This will remove:\n"
+        "• chaotic-keyring\n"
+        "• chaotic-mirrorlist\n\n"
+        "Note: You may need to manually remove the [chaotic-aur] section "
+        "from /etc/pacman.conf to fully disable the repository.");
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::No);
+    
+    if (msgBox.exec() != QMessageBox::Yes) {
+        return;
+    }
+    
+    m_statusLabel->setText("Removing Chaotic-AUR packages...");
+    m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
+    m_statusLabel->show();
+    m_removeChaoticButton->setEnabled(false);
+    
+    // Remove chaotic-keyring and chaotic-mirrorlist
+    QProcess* process = new QProcess(this);
+    connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, [this, process](int exitCode, QProcess::ExitStatus exitStatus) {
+        process->deleteLater();
+        m_removeChaoticButton->setEnabled(true);
+        
+        if (exitCode == 0 && exitStatus == QProcess::NormalExit) {
+            m_statusLabel->setText("Chaotic-AUR packages removed successfully!");
+            m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
+            m_statusLabel->show();
+            Logger::info("Chaotic-AUR packages removed successfully");
+            
+            // Refresh the chaotic-aur checkbox status
+            loadCurrentSettings();
+            
+            QMessageBox::information(this, "Success",
+                "Chaotic-AUR packages removed successfully!\n\n"
+                "To fully disable the repository, you may need to remove or comment out "
+                "the [chaotic-aur] section in /etc/pacman.conf");
+        } else {
+            m_statusLabel->setText("Failed to remove Chaotic-AUR packages.");
+            m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
+            m_statusLabel->show();
+            Logger::error("Failed to remove Chaotic-AUR packages");
+            
+            QMessageBox::critical(this, "Error",
+                "Failed to remove Chaotic-AUR packages.\n"
+                "Please check the logs for details.");
+        }
+    });
+    
+    process->start("pkexec", QStringList() << "pacman" << "-Rns" << "--noconfirm" 
+                   << "chaotic-keyring" << "chaotic-mirrorlist");
 }
