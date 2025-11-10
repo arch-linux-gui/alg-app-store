@@ -1,0 +1,116 @@
+#include "mainwindow.h"
+#include "home_widget.h"
+#include "search_widget.h"
+#include "installed_widget.h"
+#include "updates_widget.h"
+#include "../utils/logger.h"
+#include "../core/alpm_wrapper.h"
+#include <QMenuBar>
+#include <QMenu>
+#include <QAction>
+#include <QFile>
+#include <QApplication>
+#include <QMessageBox>
+
+MainWindow::MainWindow(QWidget* parent)
+    : QMainWindow(parent)
+    , m_tabWidget(std::make_unique<QTabWidget>(this)) {
+    
+    setupUi();
+    loadStyleSheet();
+    
+    // Initialize ALPM
+    if (!AlpmWrapper::instance().initialize()) {
+        QMessageBox::critical(this, "Error", 
+            "Failed to initialize package manager. Please check your system configuration.");
+        Logger::error("Failed to initialize ALPM in MainWindow");
+    }
+    
+    Logger::info("MainWindow created successfully");
+}
+
+MainWindow::~MainWindow() {
+    AlpmWrapper::instance().release();
+    Logger::info("MainWindow destroyed");
+}
+
+void MainWindow::setupUi() {
+    setWindowTitle("ALG App Store (Beta)");
+    setMinimumSize(1024, 768);
+    resize(1124, 868);
+    
+    // Create widgets
+    m_homeWidget = new HomeWidget(this);
+    m_searchWidget = new SearchWidget(this);
+    m_installedWidget = new InstalledWidget(this);
+    m_updatesWidget = new UpdatesWidget(this);
+    
+    // Add tabs
+    m_tabWidget->addTab(m_homeWidget, "Home");
+    m_tabWidget->addTab(m_searchWidget, "Search");
+    m_tabWidget->addTab(m_installedWidget, "Installed");
+    m_tabWidget->addTab(m_updatesWidget, "Updates");
+    
+    m_tabWidget->setTabPosition(QTabWidget::North);
+    m_tabWidget->setMovable(false);
+    
+    setCentralWidget(m_tabWidget.get());
+    createMenuBar();
+}
+
+void MainWindow::createMenuBar() {
+    auto* fileMenu = menuBar()->addMenu("&File");
+    
+    auto* refreshAction = new QAction("&Refresh", this);
+    refreshAction->setShortcut(QKeySequence::Refresh);
+    connect(refreshAction, &QAction::triggered, [this]() {
+        int currentIndex = m_tabWidget->currentIndex();
+        if (currentIndex == 0) {
+            // Home widget refresh
+        } else if (currentIndex == 1) {
+            // Search widget refresh
+        } else if (currentIndex == 2) {
+            m_installedWidget->refreshPackages();
+        } else if (currentIndex == 3) {
+            m_updatesWidget->checkForUpdates();
+        }
+    });
+    fileMenu->addAction(refreshAction);
+    
+    fileMenu->addSeparator();
+    
+    auto* quitAction = new QAction("&Quit", this);
+    quitAction->setShortcut(QKeySequence::Quit);
+    connect(quitAction, &QAction::triggered, this, &QMainWindow::close);
+    fileMenu->addAction(quitAction);
+    
+    auto* helpMenu = menuBar()->addMenu("&Help");
+    
+    auto* aboutAction = new QAction("&About", this);
+    connect(aboutAction, &QAction::triggered, [this]() {
+        QMessageBox::about(this, "About ALG App Store",
+            "ALG App Store (Beta)\n\n"
+            "A modern package manager for Arch Linux\n"
+            "Built with Qt6 and C++17\n\n"
+            "© 2025 Arch Linux GUI");
+    });
+    helpMenu->addAction(aboutAction);
+}
+
+void MainWindow::loadStyleSheet() {
+    QFile styleFile(":/stylesheet.qss");
+    
+    if (!styleFile.exists()) {
+        // Try loading from file system
+        styleFile.setFileName("stylesheet.qss");
+    }
+    
+    if (styleFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(styleFile.readAll());
+        qApp->setStyleSheet(styleSheet);
+        styleFile.close();
+        Logger::info("Stylesheet loaded successfully");
+    } else {
+        Logger::warning("Could not load stylesheet");
+    }
+}
