@@ -27,7 +27,7 @@ A modern, native package manager for Arch Linux built with Qt6 and C++17. This i
 ### Build Dependencies
 
 ```bash
-sudo pacman -S base-devel cmake qt6-base qt6-svg pkgconf
+sudo pacman -S base-devel cmake qt6-base qt6-svg alpm pkgconf
 ```
 
 ### Runtime Dependencies
