@@ -118,7 +118,7 @@ void MainWindow::createMenuBar() {
             "ALG App Store (Beta)\n\n"
             "A modern package manager for Arch Linux\n"
             "Built with Qt6 and C++17\n\n"
-            "© 2025 Arch Linux GUI");
+            "© 2025 Arka Linux GUI");
     });
     helpMenu->addAction(aboutAction);
 }

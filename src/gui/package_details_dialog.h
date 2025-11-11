@@ -23,6 +23,8 @@ private:
     void hideProgress();
     void toggleLogViewer();
     void parseProgressOutput(const QString& output);
+    QString findDesktopFile() const;
+    void launchApplication();
     
     PackageInfo m_info;
     bool m_isInstalled;
@@ -38,6 +40,7 @@ private:
 
     QPushButton* m_installButton;
     QPushButton* m_uninstallButton;
+    QPushButton* m_launchButton;
     QPushButton* m_closeButton;
 
     QLabel* m_statusBadge;

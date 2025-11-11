@@ -15,6 +15,9 @@
 #include <QCoreApplication>
 #include <QRegularExpression>
 #include <QTextCursor>
+#include <QDir>
+#include <QProcess>
+#include <QFileInfo>
 
 PackageDetailsDialog::PackageDetailsDialog(const PackageInfo& info, QWidget* parent)
     : QDialog(parent)
@@ -30,6 +33,7 @@ PackageDetailsDialog::PackageDetailsDialog(const PackageInfo& info, QWidget* par
     , m_lastUpdatedLabel(new QLabel(this))
     , m_installButton(new QPushButton("Install", this))
     , m_uninstallButton(new QPushButton("Uninstall", this))
+    , m_launchButton(new QPushButton("Launch", this))
     , m_closeButton(new QPushButton("Close", this))
     , m_statusBadge(new QLabel(this))
     , m_progressBar(new QProgressBar(this))
@@ -320,6 +324,11 @@ void PackageDetailsDialog::setupUi() {
     connect(m_uninstallButton, &QPushButton::clicked, this, &PackageDetailsDialog::onUninstall);
     buttonLayout->addWidget(m_uninstallButton);
     
+    m_launchButton->setMinimumWidth(100);
+    m_launchButton->setMinimumHeight(35);
+    connect(m_launchButton, &QPushButton::clicked, this, &PackageDetailsDialog::launchApplication);
+    buttonLayout->addWidget(m_launchButton);
+    
     m_closeButton->setMinimumWidth(100);
     m_closeButton->setMinimumHeight(35);
     connect(m_closeButton, &QPushButton::clicked, this, &QDialog::accept);
@@ -415,6 +424,10 @@ void PackageDetailsDialog::checkInstallStatus() {
 void PackageDetailsDialog::updateButtonStates() {
     m_installButton->setEnabled(!m_isInstalled);
     m_uninstallButton->setEnabled(m_isInstalled);
+    
+    // Enable launch button only if installed and has a desktop file
+    QString desktopFile = findDesktopFile();
+    m_launchButton->setEnabled(m_isInstalled && !desktopFile.isEmpty());
 }
 
 void PackageDetailsDialog::onInstall() {
@@ -428,6 +441,7 @@ void PackageDetailsDialog::onInstall() {
         // Disable buttons during operation
         m_installButton->setEnabled(false);
         m_uninstallButton->setEnabled(false);
+        m_launchButton->setEnabled(false);
         m_closeButton->setEnabled(false);
         
         PackageManager::instance().installPackage(m_info.name, m_info.repository);
@@ -447,6 +461,7 @@ void PackageDetailsDialog::onUninstall() {
         // Disable buttons during operation
         m_installButton->setEnabled(false);
         m_uninstallButton->setEnabled(false);
+        m_launchButton->setEnabled(false);
         m_closeButton->setEnabled(false);
         
         PackageManager::instance().uninstallPackage(m_info.name, m_info.repository);
@@ -586,4 +601,98 @@ void PackageDetailsDialog::onOperationError(const QString& error) {
     m_closeButton->setEnabled(true);
 
     QMessageBox::critical(this, "Error", error);
+}
+
+QString PackageDetailsDialog::findDesktopFile() const {
+    if (!m_isInstalled) {
+        return QString();
+    }
+    
+    // Common locations for .desktop files
+    QStringList desktopDirs = {
+        "/usr/share/applications",
+        "/usr/local/share/applications",
+        QDir::homePath() + "/.local/share/applications"
+    };
+    
+    // Try to find desktop file matching the package name
+    // Common patterns: package.desktop, package-*.desktop
+    QStringList patterns = {
+        m_info.name + ".desktop",
+        m_info.name + "-*.desktop"
+    };
+    
+    for (const QString& dir : desktopDirs) {
+        QDir desktopDir(dir);
+        if (!desktopDir.exists()) {
+            continue;
+        }
+        
+        for (const QString& pattern : patterns) {
+            QStringList matches = desktopDir.entryList(QStringList() << pattern, QDir::Files);
+            if (!matches.isEmpty()) {
+                QString desktopFile = desktopDir.absoluteFilePath(matches.first());
+                Logger::info(QString("Found desktop file for %1: %2").arg(m_info.name, desktopFile));
+                return desktopFile;
+            }
+        }
+    }
+    
+    Logger::debug(QString("No desktop file found for package: %1").arg(m_info.name));
+    return QString();
+}
+
+void PackageDetailsDialog::launchApplication() {
+    QString desktopFile = findDesktopFile();
+    
+    if (desktopFile.isEmpty()) {
+        QMessageBox::warning(this, "Launch Failed",
+            QString("Could not find a desktop file for %1.\n"
+                    "This application may not have a graphical interface or "
+                    "may need to be launched from the terminal.").arg(m_info.name));
+        return;
+    }
+    
+    // Launch the application using gtk-launch or similar
+    QProcess* process = new QProcess(this);
+    
+    // Try gtk-launch first (works on most desktop environments)
+    QString baseName = QFileInfo(desktopFile).fileName();
+    
+    connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, [this, process, baseName](int exitCode, QProcess::ExitStatus exitStatus) {
+        process->deleteLater();
+        
+        if (exitCode != 0 || exitStatus != QProcess::NormalExit) {
+            Logger::error(QString("Failed to launch application: %1").arg(baseName));
+            QMessageBox::warning(this, "Launch Failed",
+                QString("Failed to launch %1.\n"
+                        "Exit code: %2").arg(m_info.name).arg(exitCode));
+        } else {
+            Logger::info(QString("Successfully launched: %1").arg(baseName));
+        }
+    });
+    
+    // Try gtk-launch first
+    process->start("gtk-launch", QStringList() << baseName);
+    
+    // If gtk-launch doesn't start, try alternative methods
+    if (!process->waitForStarted(1000)) {
+        // Try dex (Desktop Entry Execution)
+        process->start("dex", QStringList() << desktopFile);
+        
+        if (!process->waitForStarted(1000)) {
+            // Try exo-open (XFCE)
+            process->start("exo-open", QStringList() << desktopFile);
+            
+            if (!process->waitForStarted(1000)) {
+                // Last resort: try to parse and execute the Exec line
+                process->deleteLater();
+                QMessageBox::warning(this, "Launch Failed",
+                    "Could not find a suitable desktop file launcher.\n"
+                    "Please install gtk-launch, dex, or exo-open.");
+                Logger::error("No desktop file launcher available");
+            }
+        }
+    }
 }
