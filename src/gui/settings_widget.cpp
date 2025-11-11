@@ -712,6 +712,9 @@ void SettingsWidget::onApplyClicked() {
         if (chaoticSuccess) {
             m_originalChaoticAurState = currentChaoticAurState;
             changesApplied = true;
+            
+            // Emit signal to notify other widgets
+            emit chaoticAurStatusChanged(currentChaoticAurState);
         } else {
             success = false;
         }
@@ -775,6 +778,11 @@ void SettingsWidget::onRevertClicked() {
 bool SettingsWidget::isMultilibEnabled() const {
     return m_multilibRepoCheckbox->isChecked() && 
            (m_multilibRepoCheckbox->isChecked() == m_originalMultilibState);
+}
+
+bool SettingsWidget::isChaoticAurEnabled() const {
+    return m_chaoticAurCheckbox->isChecked() && 
+           (m_chaoticAurCheckbox->isChecked() == m_originalChaoticAurState);
 }
 
 void SettingsWidget::applySettings() {

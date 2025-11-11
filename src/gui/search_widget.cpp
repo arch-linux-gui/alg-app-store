@@ -221,7 +221,7 @@ void SearchWidget::onPackageClicked(const PackageInfo& info) {
     dialog->deleteLater();
 }
 
-void SearchWidget::updateRepositoryList(bool multilibEnabled) {
+void SearchWidget::updateRepositoryList(bool multilibEnabled, bool chaoticAurEnabled) {
     // Save the current selection
     int currentIndex = m_filterCombo->currentIndex();
     QString currentFilter = m_filterCombo->itemData(currentIndex).toString();
@@ -235,6 +235,16 @@ void SearchWidget::updateRepositoryList(bool multilibEnabled) {
         }
     }
     
+    // Check if chaotic-aur already exists in the list
+    bool chaoticAurExists = false;
+    for (int i = 0; i < m_filterCombo->count(); ++i) {
+        if (m_filterCombo->itemData(i).toString() == "chaotic-aur") {
+            chaoticAurExists = true;
+            break;
+        }
+    }
+    
+    // Handle multilib
     if (multilibEnabled && !multilibExists) {
         // Add multilib to the dropdown (insert before AUR)
         int aurIndex = m_filterCombo->findData("AUR");
@@ -253,12 +263,31 @@ void SearchWidget::updateRepositoryList(bool multilibEnabled) {
         }
     }
     
+    // Handle chaotic-aur
+    if (chaoticAurEnabled && !chaoticAurExists) {
+        // Add chaotic-aur to the dropdown (insert before AUR)
+        int aurIndex = m_filterCombo->findData("AUR");
+        if (aurIndex != -1) {
+            m_filterCombo->insertItem(aurIndex, "Chaotic-AUR", "chaotic-aur");
+        } else {
+            m_filterCombo->addItem("Chaotic-AUR", "chaotic-aur");
+        }
+        Logger::info("Added chaotic-aur repository to search filter");
+    } else if (!chaoticAurEnabled && chaoticAurExists) {
+        // Remove chaotic-aur from the dropdown
+        int chaoticAurIndex = m_filterCombo->findData("chaotic-aur");
+        if (chaoticAurIndex != -1) {
+            m_filterCombo->removeItem(chaoticAurIndex);
+            Logger::info("Removed chaotic-aur repository from search filter");
+        }
+    }
+    
     // Restore previous selection if it still exists
     int newIndex = m_filterCombo->findData(currentFilter);
     if (newIndex != -1) {
         m_filterCombo->setCurrentIndex(newIndex);
     } else {
-        // If previous selection was multilib and it's now removed, select "All"
+        // If previous selection was removed, select "All"
         m_filterCombo->setCurrentIndex(0);
     }
 }

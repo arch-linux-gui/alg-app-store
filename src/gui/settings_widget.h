@@ -16,9 +16,11 @@ public:
     ~SettingsWidget() override = default;
     
     bool isMultilibEnabled() const;
+    bool isChaoticAurEnabled() const;
     
 signals:
     void multilibStatusChanged(bool enabled);
+    void chaoticAurStatusChanged(bool enabled);
     
 private:
     void setupUi();

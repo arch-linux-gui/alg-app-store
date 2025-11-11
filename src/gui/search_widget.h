@@ -21,7 +21,7 @@ public:
     ~SearchWidget() override = default;
     
 public slots:
-    void updateRepositoryList(bool multilibEnabled);
+    void updateRepositoryList(bool multilibEnabled, bool chaoticAurEnabled = false);
     
 private:
     void setupUi();

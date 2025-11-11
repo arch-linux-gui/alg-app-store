@@ -56,10 +56,26 @@ void MainWindow::setupUi() {
     
     // Connect settings signals
     connect(m_settingsWidget, &SettingsWidget::multilibStatusChanged,
-            m_searchWidget, &SearchWidget::updateRepositoryList);
+            this, [this]() {
+        m_searchWidget->updateRepositoryList(
+            m_settingsWidget->isMultilibEnabled(),
+            m_settingsWidget->isChaoticAurEnabled()
+        );
+    });
     
-    // Initialize search widget with current multilib state
-    m_searchWidget->updateRepositoryList(m_settingsWidget->isMultilibEnabled());
+    connect(m_settingsWidget, &SettingsWidget::chaoticAurStatusChanged,
+            this, [this]() {
+        m_searchWidget->updateRepositoryList(
+            m_settingsWidget->isMultilibEnabled(),
+            m_settingsWidget->isChaoticAurEnabled()
+        );
+    });
+    
+    // Initialize search widget with current repository states
+    m_searchWidget->updateRepositoryList(
+        m_settingsWidget->isMultilibEnabled(),
+        m_settingsWidget->isChaoticAurEnabled()
+    );
     
     m_tabWidget->setTabPosition(QTabWidget::North);
     m_tabWidget->setMovable(false);
