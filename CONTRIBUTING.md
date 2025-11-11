@@ -30,7 +30,49 @@ Contributions are welcome and appreciated! To contribute:
 ## Project Structure
 
 ```
+├── assets
+│   ├── alg-app-store.desktop
+│   └── alg-app-store.png
+├── build.sh
+├── CMakeLists.txt
+├── CONTRIBUTING.md
+├── DEVELOPER_GUIDE.md
+├── LICENSE
+├── QT_REWRITE_SUMMARY.md
+├── README.md
+├── src
+│   ├── core
+│   │   ├── alpm_wrapper.cpp
+│   │   ├── alpm_wrapper.h
+│   │   ├── aur_helper.cpp
+│   │   ├── aur_helper.h
+│   │   ├── package_manager.cpp
+│   │   └── package_manager.h
+│   ├── gui
+│   │   ├── home_widget.cpp
+│   │   ├── home_widget.h
+│   │   ├── installed_widget.cpp
+│   │   ├── installed_widget.h
+│   │   ├── mainwindow.cpp
+│   │   ├── mainwindow.h
+│   │   ├── package_card.cpp
+│   │   ├── package_card.h
+│   │   ├── package_details_dialog.cpp
+│   │   ├── package_details_dialog.h
+│   │   ├── search_widget.cpp
+│   │   ├── search_widget.h
+│   │   ├── settings_widget.cpp
+│   │   ├── settings_widget.h
+│   │   ├── updates_widget.cpp
+│   │   └── updates_widget.h
+│   ├── main.cpp
+│   └── utils
+│       ├── logger.h
+│       └── types.h
+├── stylesheet.qss
+└── TODO.md
 
+6 directories, 36 files
 ```
 
 ## Understanding the code
