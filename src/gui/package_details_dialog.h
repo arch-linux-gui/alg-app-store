@@ -24,6 +24,9 @@ private:
     void toggleLogViewer();
     void parseProgressOutput(const QString& output);
     QString findDesktopFile() const;
+    bool verifyDesktopFile(const QString& desktopFilePath, 
+                          const QString& packageName,
+                          const QStringList& nameVariants) const;
     void launchApplication();
     
     PackageInfo m_info;

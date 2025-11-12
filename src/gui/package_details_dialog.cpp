@@ -628,6 +628,7 @@ QString PackageDetailsDialog::findDesktopFile() const {
             continue;
         }
         
+        // First try exact patterns
         for (const QString& pattern : patterns) {
             QStringList matches = desktopDir.entryList(QStringList() << pattern, QDir::Files);
             if (!matches.isEmpty()) {
@@ -636,10 +637,102 @@ QString PackageDetailsDialog::findDesktopFile() const {
                 return desktopFile;
             }
         }
+        
+        // If not found, try fuzzy matching with all .desktop files
+        QStringList allDesktopFiles = desktopDir.entryList(QStringList() << "*.desktop", QDir::Files);
+        
+        // Create regex patterns for fuzzy matching
+        // Match if package name appears in the desktop file name (case-insensitive)
+        // Handle cases like: com.obsproject.Studio.desktop -> obs
+        //                    code.desktop -> visual-studio-code-bin
+        QString packageNameLower = m_info.name.toLower();
+        QStringList nameVariants;
+        
+        // Add the full package name
+        nameVariants << packageNameLower;
+        
+        // Extract keywords from package name (split by dash and underscore)
+        QStringList parts = packageNameLower.split(QRegularExpression("[-_]"));
+        for (const QString& part : parts) {
+            if (part.length() > 2) { // Skip very short parts
+                nameVariants << part;
+            }
+        }
+        
+        // Special handling for common patterns
+        if (packageNameLower.contains("visual-studio-code")) {
+            nameVariants << "code" << "vscode";
+        }
+        if (packageNameLower.contains("obs")) {
+            nameVariants << "obs" << "obsproject" << "studio";
+        }
+        
+        // Search through all desktop files
+        for (const QString& desktopFileName : allDesktopFiles) {
+            QString fileNameLower = desktopFileName.toLower();
+            
+            // Check if any variant matches in the desktop file name
+            for (const QString& variant : nameVariants) {
+                if (fileNameLower.contains(variant)) {
+                    QString desktopFile = desktopDir.absoluteFilePath(desktopFileName);
+                    
+                    // Verify this is the right file by checking the Exec line contains package name
+                    if (verifyDesktopFile(desktopFile, packageNameLower, nameVariants)) {
+                        Logger::info(QString("Found desktop file for %1 via fuzzy match: %2")
+                                    .arg(m_info.name, desktopFile));
+                        return desktopFile;
+                    }
+                }
+            }
+        }
     }
     
     Logger::debug(QString("No desktop file found for package: %1").arg(m_info.name));
     return QString();
+}
+
+bool PackageDetailsDialog::verifyDesktopFile(const QString& desktopFilePath, 
+                                             const QString& packageName,
+                                             const QStringList& nameVariants) const {
+    QFile file(desktopFilePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return false;
+    }
+    
+    QTextStream in(&file);
+    QString content = in.readAll();
+    file.close();
+    
+    // Check if Exec line contains any of our name variants
+    QRegularExpression execPattern(R"(^Exec=(.*)$)", QRegularExpression::MultilineOption);
+    auto match = execPattern.match(content);
+    
+    if (match.hasMatch()) {
+        QString execLine = match.captured(1).toLower();
+        
+        // Check if any variant appears in the Exec line
+        for (const QString& variant : nameVariants) {
+            if (execLine.contains(variant)) {
+                return true;
+            }
+        }
+    }
+    
+    // Also check Name field as a fallback
+    QRegularExpression namePattern(R"(^Name=(.*)$)", QRegularExpression::MultilineOption);
+    match = namePattern.match(content);
+    
+    if (match.hasMatch()) {
+        QString nameField = match.captured(1).toLower();
+        
+        for (const QString& variant : nameVariants) {
+            if (nameField.contains(variant)) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
 }
 
 void PackageDetailsDialog::launchApplication() {
