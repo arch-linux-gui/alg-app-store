@@ -69,8 +69,9 @@ void PackageManager::installPackage(const QString& packageName, const QString& r
     Logger::info(QString("Installing package: %1 from %2").arg(packageName, repository.isEmpty() ? "default" : repository));
     emit operationStarted(QString("Installing %1...").arg(packageName));
     
-    // Determine if this is an AUR package
-    bool isAUR = repository.toLower() == "aur";
+    // Determine if this is an AUR package (not from official repos or chaotic-aur)
+    QString repoLower = repository.toLower();
+    bool isAUR = repoLower == "aur";
     QString helper = getHelperName();
     
     QString command;
@@ -78,7 +79,7 @@ void PackageManager::installPackage(const QString& packageName, const QString& r
         // AUR packages - run helper as regular user (no pkexec)
         command = QString("%1 -S %2 --noconfirm").arg(helper, packageName);
     } else {
-        // Official repos need root access
+        // Official repos and chaotic-aur need root access and use pacman
         command = QString("pkexec pacman -S %1 --noconfirm").arg(packageName);
     }
     
@@ -103,8 +104,9 @@ void PackageManager::updatePackage(const QString& packageName, const QString& re
     Logger::info(QString("Updating package: %1 from %2").arg(packageName, repository.isEmpty() ? "default" : repository));
     emit operationStarted(QString("Updating %1...").arg(packageName));
     
-    // Determine if this is an AUR package
-    bool isAUR = repository.toLower() == "aur";
+    // Determine if this is an AUR package (not from official repos or chaotic-aur)
+    QString repoLower = repository.toLower();
+    bool isAUR = repoLower == "aur";
     QString helper = getHelperName();
     
     QString command;
@@ -112,7 +114,7 @@ void PackageManager::updatePackage(const QString& packageName, const QString& re
         // AUR packages - run helper as regular user (no pkexec)
         command = QString("%1 -S %2 --noconfirm").arg(helper, packageName);
     } else {
-        // Official repos need root access
+        // Official repos and chaotic-aur need root access and use pacman
         command = QString("pkexec pacman -S %1 --noconfirm").arg(packageName);
     }
     

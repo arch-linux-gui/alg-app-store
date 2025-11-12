@@ -7,6 +7,8 @@
 #include <QFile>
 #include <QTextStream>
 #include <QProcess>
+#include <QScrollArea>
+#include <QWidget>
 
 SettingsWidget::SettingsWidget(QWidget* parent)
     : QWidget(parent)
@@ -18,6 +20,9 @@ SettingsWidget::SettingsWidget(QWidget* parent)
     , m_chaoticAurGroup(nullptr)
     , m_setupChaoticButton(nullptr)
     , m_removeChaoticButton(nullptr)
+    , m_maintenanceGroup(nullptr)
+    , m_removeLockButton(nullptr)
+    , m_syncReposButton(nullptr)
     , m_applyButton(nullptr)
     , m_revertButton(nullptr)
     , m_statusLabel(nullptr)
@@ -31,11 +36,25 @@ SettingsWidget::SettingsWidget(QWidget* parent)
 }
 
 void SettingsWidget::setupUi() {
-    auto* mainLayout = new QVBoxLayout(this);
+    // Create main layout for the widget
+    auto* outerLayout = new QVBoxLayout(this);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
+    
+    // Create scroll area
+    auto* scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    
+    // Create content widget that will be scrollable
+    auto* contentWidget = new QWidget();
+    auto* mainLayout = new QVBoxLayout(contentWidget);
     mainLayout->setSpacing(20);
+    mainLayout->setContentsMargins(10, 10, 10, 10);
     
     // Title
-    auto* titleLabel = new QLabel("Settings", this);
+    auto* titleLabel = new QLabel("Settings", contentWidget);
     auto titleFont = titleLabel->font();
     titleFont.setPointSize(24);
     titleFont.setBold(true);
@@ -55,7 +74,7 @@ void SettingsWidget::setupUi() {
     mainLayout->addWidget(m_maintenanceGroup);
     
     // Status label
-    m_statusLabel = new QLabel(this);
+    m_statusLabel = new QLabel(contentWidget);
     m_statusLabel->setAlignment(Qt::AlignCenter);
     m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
     m_statusLabel->hide();
@@ -65,13 +84,13 @@ void SettingsWidget::setupUi() {
     auto* buttonLayout = new QHBoxLayout();
     buttonLayout->addStretch();
     
-    m_revertButton = new QPushButton("Revert", this);
+    m_revertButton = new QPushButton("Revert", contentWidget);
     m_revertButton->setMinimumWidth(100);
     m_revertButton->setEnabled(false);
     connect(m_revertButton, &QPushButton::clicked, this, &SettingsWidget::onRevertClicked);
     buttonLayout->addWidget(m_revertButton);
     
-    m_applyButton = new QPushButton("Apply", this);
+    m_applyButton = new QPushButton("Apply", contentWidget);
     m_applyButton->setMinimumWidth(100);
     m_applyButton->setEnabled(false);
     connect(m_applyButton, &QPushButton::clicked, this, &SettingsWidget::onApplyClicked);
@@ -82,7 +101,13 @@ void SettingsWidget::setupUi() {
     // Add stretch at the bottom
     mainLayout->addStretch();
     
-    setLayout(mainLayout);
+    // Set the content widget to the scroll area
+    scrollArea->setWidget(contentWidget);
+    
+    // Add scroll area to the outer layout
+    outerLayout->addWidget(scrollArea);
+    
+    setLayout(outerLayout);
 }
 
 void SettingsWidget::createRepositorySettings() {
@@ -257,6 +282,39 @@ void SettingsWidget::createMaintenanceSettings() {
     lockInfoLabel->setWordWrap(true);
     lockInfoLabel->setStyleSheet("QLabel { color: #888; font-size: 11px; margin-top: 5px; margin-left: 10px; }");
     maintenanceLayout->addWidget(lockInfoLabel);
+    
+    // Spacer
+    maintenanceLayout->addSpacing(15);
+    
+    // Sync repositories section
+    auto* syncReposLayout = new QHBoxLayout();
+    
+    auto* syncReposLabel = new QLabel(
+        "Synchronize Repositories:",
+        this);
+    syncReposLabel->setStyleSheet("QLabel { font-weight: bold; }");
+    syncReposLayout->addWidget(syncReposLabel);
+    
+    syncReposLayout->addStretch();
+    
+    m_syncReposButton = new QPushButton("Sync Repositories", this);
+    m_syncReposButton->setMinimumWidth(150);
+    m_syncReposButton->setToolTip(
+        "Manually synchronize package databases (pacman -Sy).\n"
+        "This updates the list of available packages from all enabled repositories.");
+    connect(m_syncReposButton, &QPushButton::clicked, this, &SettingsWidget::onSyncReposClicked);
+    syncReposLayout->addWidget(m_syncReposButton);
+    
+    maintenanceLayout->addLayout(syncReposLayout);
+    
+    // Sync info
+    auto* syncInfoLabel = new QLabel(
+        "Use this to manually update your package database. This is useful after enabling/disabling repositories\n"
+        "or when you want to ensure you have the latest package information.",
+        this);
+    syncInfoLabel->setWordWrap(true);
+    syncInfoLabel->setStyleSheet("QLabel { color: #888; font-size: 11px; margin-top: 5px; margin-left: 10px; }");
+    maintenanceLayout->addWidget(syncInfoLabel);
     
     m_maintenanceGroup->setLayout(maintenanceLayout);
 }
@@ -968,4 +1026,60 @@ void SettingsWidget::onRemoveChaoticClicked() {
     
     process->start("pkexec", QStringList() << "pacman" << "-Rns" << "--noconfirm" 
                    << "chaotic-keyring" << "chaotic-mirrorlist");
+}
+
+void SettingsWidget::onSyncReposClicked() {
+    QMessageBox msgBox(this);
+    msgBox.setIcon(QMessageBox::Question);
+    msgBox.setWindowTitle("Sync Repositories");
+    msgBox.setText("Synchronize package databases?");
+    msgBox.setInformativeText(
+        "This will run: pacman -Sy\n\n"
+        "This updates the list of available packages from all enabled repositories.\n"
+        "This is useful after enabling/disabling repositories or when you want to "
+        "ensure you have the latest package information.");
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::Yes);
+    
+    if (msgBox.exec() != QMessageBox::Yes) {
+        return;
+    }
+    
+    m_statusLabel->setText("Synchronizing repositories...");
+    m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
+    m_statusLabel->show();
+    m_syncReposButton->setEnabled(false);
+    
+    // Run pacman -Sy with pkexec
+    QProcess* process = new QProcess(this);
+    connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, [this, process](int exitCode, QProcess::ExitStatus exitStatus) {
+        process->deleteLater();
+        m_syncReposButton->setEnabled(true);
+        
+        if (exitCode == 0 && exitStatus == QProcess::NormalExit) {
+            m_statusLabel->setText("Repositories synchronized successfully!");
+            m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
+            m_statusLabel->show();
+            Logger::info("Repositories synchronized successfully");
+            
+            // Refresh ALPM databases
+            AlpmWrapper::instance().refreshDatabases();
+            
+            QMessageBox::information(this, "Success",
+                "Package databases synchronized successfully!\n\n"
+                "The package list has been updated with the latest available packages.");
+        } else {
+            m_statusLabel->setText("Failed to synchronize repositories.");
+            m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
+            m_statusLabel->show();
+            Logger::error("Failed to synchronize repositories");
+            
+            QMessageBox::critical(this, "Error",
+                "Failed to synchronize package databases.\n"
+                "Please check your internet connection and try again.");
+        }
+    });
+    
+    process->start("pkexec", QStringList() << "pacman" << "-Sy");
 }
