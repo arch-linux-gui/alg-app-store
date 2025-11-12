@@ -577,27 +577,37 @@ bool SettingsWidget::enableChaoticAurInPacmanConf() {
     
     QStringList lines;
     QTextStream in(&file);
-    bool chaoticAurSectionFound = false;
-    bool chaoticAurExists = false;
+    bool inCommentedChaoticAurSection = false;
+    bool chaoticAurSectionExists = false;
     
     while (!in.atEnd()) {
         QString line = in.readLine();
+        QString trimmedLine = line.trimmed();
         
-        // Check if chaotic-aur section already exists (uncommented)
-        if (line.trimmed() == "[chaotic-aur]") {
-            chaoticAurExists = true;
-        }
-        
-        // Check if this is a commented [chaotic-aur] section
-        if (line.trimmed() == "#[chaotic-aur]") {
-            lines.append("[chaotic-aur]");
-            chaoticAurSectionFound = true;
+        // Check if chaotic-aur section already exists (uncommented or commented)
+        if (trimmedLine == "[chaotic-aur]" || trimmedLine == "#[chaotic-aur]") {
+            chaoticAurSectionExists = true;
+            
+            // If it's commented, uncomment it
+            if (trimmedLine == "#[chaotic-aur]") {
+                lines.append("[chaotic-aur]");
+                inCommentedChaoticAurSection = true;
+            } else {
+                // Already uncommented, keep as is
+                lines.append(line);
+            }
         } 
         // Check if the Include/Server line in chaotic-aur section is commented
-        else if (chaoticAurSectionFound && line.trimmed().startsWith("#") && 
-                 (line.contains("Include") || line.contains("Server"))) {
-            lines.append(line.mid(line.indexOf('#') + 1)); // Remove the # comment character
-            chaoticAurSectionFound = false; // Reset flag after processing
+        else if (inCommentedChaoticAurSection && trimmedLine.startsWith("#") && 
+                 (trimmedLine.contains("Include") || trimmedLine.contains("Server"))) {
+            // Remove the # comment character
+            lines.append(line.mid(line.indexOf('#') + 1));
+            inCommentedChaoticAurSection = false;
+        }
+        // Check if we hit another section, reset flag
+        else if (trimmedLine.startsWith("[") && trimmedLine != "[chaotic-aur]" && trimmedLine != "#[chaotic-aur]") {
+            lines.append(line);
+            inCommentedChaoticAurSection = false;
         }
         else {
             lines.append(line);
@@ -606,7 +616,7 @@ bool SettingsWidget::enableChaoticAurInPacmanConf() {
     file.close();
     
     // If chaotic-aur section doesn't exist at all, add it
-    if (!chaoticAurExists && !chaoticAurSectionFound) {
+    if (!chaoticAurSectionExists) {
         lines.append("");
         lines.append("[chaotic-aur]");
         lines.append("Include = /etc/pacman.d/chaotic-mirrorlist");
@@ -657,18 +667,24 @@ bool SettingsWidget::disableChaoticAurInPacmanConf() {
         QString line = in.readLine();
         QString trimmedLine = line.trimmed();
         
-        // Check if this is [chaotic-aur] section
+        // Check if this is [chaotic-aur] section (uncommented or already commented)
         if (trimmedLine == "[chaotic-aur]") {
             lines.append("#[chaotic-aur]");
             inChaoticAurSection = true;
         }
-        // Check if we're in chaotic-aur section and this is the Include/Server line
+        else if (trimmedLine == "#[chaotic-aur]") {
+            // Already commented, keep as is
+            lines.append(line);
+            inChaoticAurSection = false;
+        }
+        // Check if we're in chaotic-aur section and this is the Include/Server line (not already commented)
         else if (inChaoticAurSection && !trimmedLine.startsWith("#") &&
                  (trimmedLine.startsWith("Include") || trimmedLine.startsWith("Server"))) {
             lines.append("#" + line);
+            inChaoticAurSection = false;
         }
         // Check if we hit another section
-        else if (trimmedLine.startsWith("[") && trimmedLine != "[chaotic-aur]") {
+        else if (trimmedLine.startsWith("[") && trimmedLine != "[chaotic-aur]" && trimmedLine != "#[chaotic-aur]") {
             lines.append(line);
             inChaoticAurSection = false;
         }
