@@ -642,9 +642,8 @@ QString PackageDetailsDialog::findDesktopFile() const {
         QStringList allDesktopFiles = desktopDir.entryList(QStringList() << "*.desktop", QDir::Files);
         
         // Create regex patterns for fuzzy matching
-        // Match if package name appears in the desktop file name (case-insensitive)
-        // Handle cases like: com.obsproject.Studio.desktop -> obs
-        //                    code.desktop -> visual-studio-code-bin
+        // Handle reverse domain names: com.obsproject.Studio.desktop -> obs-studio
+        // Handle simple names: code.desktop -> visual-studio-code-bin
         QString packageNameLower = m_info.name.toLower();
         QStringList nameVariants;
         
@@ -653,32 +652,68 @@ QString PackageDetailsDialog::findDesktopFile() const {
         
         // Extract keywords from package name (split by dash and underscore)
         QStringList parts = packageNameLower.split(QRegularExpression("[-_]"));
+        QStringList significantParts;
         for (const QString& part : parts) {
-            if (part.length() > 2) { // Skip very short parts
-                nameVariants << part;
+            if (part.length() > 3) { // Skip very short parts to avoid false matches
+                significantParts << part;
             }
         }
         
         // Special handling for common patterns
+        QStringList specialVariants;
         if (packageNameLower.contains("visual-studio-code")) {
-            nameVariants << "code" << "vscode";
-        }
-        if (packageNameLower.contains("obs")) {
-            nameVariants << "obs" << "obsproject" << "studio";
+            specialVariants << "vscode" << "code";
+        } else if (packageNameLower == "obs-studio") {
+            // For obs-studio, look for obsproject specifically
+            specialVariants << "obsproject";
         }
         
-        // Search through all desktop files
-        for (const QString& desktopFileName : allDesktopFiles) {
-            QString fileNameLower = desktopFileName.toLower();
-            
-            // Check if any variant matches in the desktop file name
-            for (const QString& variant : nameVariants) {
+        // Try special variants first (highest priority)
+        for (const QString& variant : specialVariants) {
+            for (const QString& desktopFileName : allDesktopFiles) {
+                QString fileNameLower = desktopFileName.toLower();
+                
                 if (fileNameLower.contains(variant)) {
                     QString desktopFile = desktopDir.absoluteFilePath(desktopFileName);
                     
-                    // Verify this is the right file by checking the Exec line contains package name
-                    if (verifyDesktopFile(desktopFile, packageNameLower, nameVariants)) {
-                        Logger::info(QString("Found desktop file for %1 via fuzzy match: %2")
+                    if (verifyDesktopFile(desktopFile, nameVariants + specialVariants + significantParts)) {
+                        Logger::info(QString("Found desktop file for %1 via special match: %2")
+                                    .arg(m_info.name, desktopFile));
+                        return desktopFile;
+                    }
+                }
+            }
+        }
+        
+        // Try full package name match
+        for (const QString& desktopFileName : allDesktopFiles) {
+            QString fileNameLower = desktopFileName.toLower();
+            
+            if (fileNameLower.contains(packageNameLower)) {
+                QString desktopFile = desktopDir.absoluteFilePath(desktopFileName);
+                
+                if (verifyDesktopFile(desktopFile, nameVariants + specialVariants + significantParts)) {
+                    Logger::info(QString("Found desktop file for %1 via full name match: %2")
+                                .arg(m_info.name, desktopFile));
+                    return desktopFile;
+                }
+            }
+        }
+        
+        // Finally, try matching individual significant parts (but verify carefully)
+        for (const QString& part : significantParts) {
+            for (const QString& desktopFileName : allDesktopFiles) {
+                QString fileNameLower = desktopFileName.toLower();
+                
+                // Use word boundary-like matching: ensure part is not in the middle of another word
+                // Check if part appears as a separate component (after . or at start, before . or -)
+                QRegularExpression wordBoundary(QString("(^|[._-])%1([._-]|$)").arg(QRegularExpression::escape(part)));
+                
+                if (wordBoundary.match(fileNameLower).hasMatch()) {
+                    QString desktopFile = desktopDir.absoluteFilePath(desktopFileName);
+                    
+                    if (verifyDesktopFile(desktopFile, nameVariants + specialVariants + significantParts)) {
+                        Logger::info(QString("Found desktop file for %1 via word match: %2")
                                     .arg(m_info.name, desktopFile));
                         return desktopFile;
                     }
@@ -691,8 +726,7 @@ QString PackageDetailsDialog::findDesktopFile() const {
     return QString();
 }
 
-bool PackageDetailsDialog::verifyDesktopFile(const QString& desktopFilePath, 
-                                             const QString& packageName,
+bool PackageDetailsDialog::verifyDesktopFile(const QString& desktopFilePath,
                                              const QStringList& nameVariants) const {
     QFile file(desktopFilePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
