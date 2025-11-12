@@ -51,6 +51,7 @@ private:
     // Maintenance settings
     QGroupBox* m_maintenanceGroup;
     QPushButton* m_removeLockButton;
+    QPushButton* m_syncReposButton;
     
     // Control buttons
     QPushButton* m_applyButton;
@@ -70,6 +71,7 @@ private slots:
     void onSetupChaoticClicked();
     void onRemoveChaoticClicked();
     void onRemoveLockClicked();
+    void onSyncReposClicked();
 };
 
 #endif // SETTINGS_WIDGET_H
