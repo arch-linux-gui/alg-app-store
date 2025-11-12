@@ -187,3 +187,30 @@ void PackageManager::onProcessOutput() {
         emit operationOutput(output);
     }
 }
+
+void PackageManager::cancelRunningOperation() {
+    if (m_process && m_process->state() != QProcess::NotRunning) {
+        Logger::warning("Cancelling running operation...");
+        emit operationOutput("\n>>> Operation cancelled by user <<<\n");
+        
+        // First try to terminate gracefully
+        m_process->terminate();
+        
+        // Wait up to 5 seconds for graceful termination
+        if (!m_process->waitForFinished(5000)) {
+            // If it doesn't terminate gracefully, force kill
+            Logger::warning("Process did not terminate gracefully, forcing kill...");
+            m_process->kill();
+            m_process->waitForFinished(1000);
+        }
+        
+        emit operationCompleted(false, "Operation cancelled by user");
+        Logger::info("Operation cancelled successfully");
+    } else {
+        Logger::warning("No operation is currently running");
+    }
+}
+
+bool PackageManager::isOperationRunning() const {
+    return m_process && m_process->state() != QProcess::NotRunning;
+}

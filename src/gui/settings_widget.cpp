@@ -1,6 +1,7 @@
 #include "settings_widget.h"
 #include "../utils/logger.h"
 #include "../core/alpm_wrapper.h"
+#include "../core/package_manager.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
@@ -23,8 +24,8 @@ SettingsWidget::SettingsWidget(QWidget* parent)
     , m_maintenanceGroup(nullptr)
     , m_removeLockButton(nullptr)
     , m_syncReposButton(nullptr)
+    , m_cancelProcessButton(nullptr)
     , m_applyButton(nullptr)
-    , m_revertButton(nullptr)
     , m_statusLabel(nullptr)
     , m_originalMultilibState(false)
     , m_originalChaoticAurState(false) {
@@ -79,24 +80,6 @@ void SettingsWidget::setupUi() {
     m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
     m_statusLabel->hide();
     mainLayout->addWidget(m_statusLabel);
-    
-    // Buttons
-    auto* buttonLayout = new QHBoxLayout();
-    buttonLayout->addStretch();
-    
-    m_revertButton = new QPushButton("Revert", contentWidget);
-    m_revertButton->setMinimumWidth(100);
-    m_revertButton->setEnabled(false);
-    connect(m_revertButton, &QPushButton::clicked, this, &SettingsWidget::onRevertClicked);
-    buttonLayout->addWidget(m_revertButton);
-    
-    m_applyButton = new QPushButton("Apply", contentWidget);
-    m_applyButton->setMinimumWidth(100);
-    m_applyButton->setEnabled(false);
-    connect(m_applyButton, &QPushButton::clicked, this, &SettingsWidget::onApplyClicked);
-    buttonLayout->addWidget(m_applyButton);
-    
-    mainLayout->addLayout(buttonLayout);
     
     // Add stretch at the bottom
     mainLayout->addStretch();
@@ -164,6 +147,18 @@ void SettingsWidget::createRepositorySettings() {
     infoLabel->setWordWrap(true);
     infoLabel->setStyleSheet("QLabel { color: #888; font-style: italic; margin-top: 10px; }");
     repoLayout->addWidget(infoLabel);
+    
+    // Apply button
+    auto* applyLayout = new QHBoxLayout();
+    applyLayout->addStretch();
+    
+    m_applyButton = new QPushButton("Apply Changes", this);
+    m_applyButton->setMinimumWidth(150);
+    m_applyButton->setEnabled(false);
+    connect(m_applyButton, &QPushButton::clicked, this, &SettingsWidget::onApplyClicked);
+    applyLayout->addWidget(m_applyButton);
+    
+    repoLayout->addLayout(applyLayout);
     
     m_repositoryGroup->setLayout(repoLayout);
 }
@@ -315,6 +310,40 @@ void SettingsWidget::createMaintenanceSettings() {
     syncInfoLabel->setWordWrap(true);
     syncInfoLabel->setStyleSheet("QLabel { color: #888; font-size: 11px; margin-top: 5px; margin-left: 10px; }");
     maintenanceLayout->addWidget(syncInfoLabel);
+    
+    // Spacer
+    maintenanceLayout->addSpacing(15);
+    
+    // Cancel running process section
+    auto* cancelProcessLayout = new QHBoxLayout();
+    
+    auto* cancelProcessLabel = new QLabel(
+        "Cancel Running Process:",
+        this);
+    cancelProcessLabel->setStyleSheet("QLabel { font-weight: bold; }");
+    cancelProcessLayout->addWidget(cancelProcessLabel);
+    
+    cancelProcessLayout->addStretch();
+    
+    m_cancelProcessButton = new QPushButton("Cancel Process", this);
+    m_cancelProcessButton->setMinimumWidth(150);
+    m_cancelProcessButton->setToolTip(
+        "Cancel any running package operation (install, uninstall, update).\n"
+        "Use this if an operation is stuck or taking too long.\n"
+        "This is different from removing the lock file - it actually stops the running process.");
+    connect(m_cancelProcessButton, &QPushButton::clicked, this, &SettingsWidget::onCancelProcessClicked);
+    cancelProcessLayout->addWidget(m_cancelProcessButton);
+    
+    maintenanceLayout->addLayout(cancelProcessLayout);
+    
+    // Cancel process info
+    auto* cancelInfoLabel = new QLabel(
+        "Use this to cancel a stuck installation, uninstallation, or update process.\n"
+        "This is useful when you see 'Another operation is already in progress' and want to stop it.",
+        this);
+    cancelInfoLabel->setWordWrap(true);
+    cancelInfoLabel->setStyleSheet("QLabel { color: #888; font-size: 11px; margin-top: 5px; margin-left: 10px; }");
+    maintenanceLayout->addWidget(cancelInfoLabel);
     
     m_maintenanceGroup->setLayout(maintenanceLayout);
 }
@@ -680,11 +709,10 @@ bool SettingsWidget::disableChaoticAurInPacmanConf() {
 }
 
 void SettingsWidget::onSettingsChanged() {
-    // Enable apply and revert buttons when settings change
+    // Enable apply button when settings change
     bool hasChanges = (m_multilibRepoCheckbox->isChecked() != m_originalMultilibState) ||
                       (m_chaoticAurCheckbox->isChecked() != m_originalChaoticAurState);
     m_applyButton->setEnabled(hasChanges);
-    m_revertButton->setEnabled(hasChanges);
     m_statusLabel->hide();
 }
 
@@ -785,7 +813,6 @@ void SettingsWidget::onApplyClicked() {
         m_statusLabel->show();
         
         m_applyButton->setEnabled(false);
-        m_revertButton->setEnabled(false);
         
         // Suggest database sync
             auto reply = QMessageBox::question(this, "Sync Package Database",
@@ -818,19 +845,6 @@ void SettingsWidget::onApplyClicked() {
         m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
         m_statusLabel->show();
     }
-}
-
-void SettingsWidget::onRevertClicked() {
-    // Revert to original state
-    m_multilibRepoCheckbox->setChecked(m_originalMultilibState);
-    m_chaoticAurCheckbox->setChecked(m_originalChaoticAurState);
-    m_applyButton->setEnabled(false);
-    m_revertButton->setEnabled(false);
-    m_statusLabel->setText("Changes reverted");
-    m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
-    m_statusLabel->show();
-    
-    Logger::info("Settings reverted to original state");
 }
 
 bool SettingsWidget::isMultilibEnabled() const {
@@ -1082,4 +1096,49 @@ void SettingsWidget::onSyncReposClicked() {
     });
     
     process->start("pkexec", QStringList() << "pacman" << "-Sy");
+}
+
+void SettingsWidget::onCancelProcessClicked() {
+    // Check if there's actually a process running
+    if (!PackageManager::instance().isOperationRunning()) {
+        QMessageBox::information(this, "No Process Running",
+            "There is no package operation currently running.\n"
+            "Nothing to cancel.");
+        return;
+    }
+    
+    // Show confirmation dialog
+    QMessageBox msgBox(this);
+    msgBox.setIcon(QMessageBox::Warning);
+    msgBox.setWindowTitle("Cancel Running Process");
+    msgBox.setText("Are you sure you want to cancel the running package operation?");
+    msgBox.setInformativeText(
+        "This will stop the current installation, uninstallation, or update process.\n\n"
+        "WARNING: Cancelling a package operation may leave your system in an inconsistent state.\n"
+        "You may need to run the operation again to complete it properly.\n\n"
+        "It's recommended to only cancel if the process is truly stuck or unresponsive.");
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::No);
+    
+    if (msgBox.exec() != QMessageBox::Yes) {
+        return;
+    }
+    
+    m_statusLabel->setText("Cancelling running process...");
+    m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
+    m_statusLabel->show();
+    
+    // Cancel the operation
+    PackageManager::instance().cancelRunningOperation();
+    
+    m_statusLabel->setText("Process cancelled successfully!");
+    m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
+    m_statusLabel->show();
+    
+    Logger::info("User cancelled running package operation from settings");
+    
+    QMessageBox::information(this, "Process Cancelled",
+        "The running package operation has been cancelled.\n\n"
+        "If you were in the middle of installing or updating a package, "
+        "you may need to run the operation again to complete it.");
 }

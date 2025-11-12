@@ -52,10 +52,10 @@ private:
     QGroupBox* m_maintenanceGroup;
     QPushButton* m_removeLockButton;
     QPushButton* m_syncReposButton;
+    QPushButton* m_cancelProcessButton;
     
     // Control buttons
     QPushButton* m_applyButton;
-    QPushButton* m_revertButton;
     
     // Status
     QLabel* m_statusLabel;
@@ -66,12 +66,12 @@ private:
     
 private slots:
     void onApplyClicked();
-    void onRevertClicked();
     void onSettingsChanged();
     void onSetupChaoticClicked();
     void onRemoveChaoticClicked();
     void onRemoveLockClicked();
     void onSyncReposClicked();
+    void onCancelProcessClicked();
 };
 
 #endif // SETTINGS_WIDGET_H

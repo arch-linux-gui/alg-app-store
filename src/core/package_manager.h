@@ -31,6 +31,8 @@ public:
     void uninstallPackage(const QString& packageName, const QString& repository = QString());
     void updatePackage(const QString& packageName, const QString& repository = QString());
     void updateAllPackages();
+    void cancelRunningOperation();
+    bool isOperationRunning() const;
     
     Helper getHelper() const { return m_helper; }
     QString getHelperName() const;
