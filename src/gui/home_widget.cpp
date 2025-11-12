@@ -70,7 +70,7 @@ void HomeWidget::loadFeaturedPackages() {
         PackageInfo repoInfo = AlpmWrapper::instance().getPackageInfo(pkg.name);
         
         if (!repoInfo.name.isEmpty() && !repoInfo.repository.isEmpty()) {
-            // Package found in official repos, update with actual information
+            // Package found in official repos (including chaotic-aur), update with actual information
             pkg.repository = repoInfo.repository;
             pkg.version = repoInfo.version;
             pkg.description = repoInfo.description;
@@ -80,8 +80,10 @@ void HomeWidget::loadFeaturedPackages() {
                             .arg(pkg.name, pkg.repository, pkg.version));
             }
         } else if (pkg.repository.toLower() == "aur") {
-            // Package not found in official repos, will use AUR helper
-            Logger::debug(QString("Package %1 not found in official repos, will use AUR helper").arg(pkg.name));
+            // Package not found in official repos (including chaotic-aur)
+            // Default to AUR helper (yay/paru) since chaotic-aur is not enabled or doesn't have this package
+            pkg.repository = "aur";
+            Logger::debug(QString("Package %1 not found in enabled repositories, defaulting to AUR helper").arg(pkg.name));
         }
     }
     
