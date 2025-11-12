@@ -1,15 +1,83 @@
-# README
+# ALG App Store - Qt6/C++ Version
 
-## About
+A modern, native package manager for Arch Linux built with Qt6 and C++17. This is a complete rewrite of the original Wails-based application.
 
-About your template
+## Features
 
-## Live Development
+- **Search Packages**: Search through official Arch repositories (core, extra) and AUR
+- **View Installed Packages**: Browse and manage installed packages
+- **Check for Updates**: View available updates for both official and AUR packages
+- **Package Management**: Install, uninstall, and update packages
+- **Modern UI**: Clean, dark-themed interface with responsive design
+- **Smart Helper Detection**: Automatically detects and uses yay, paru, or falls back to pacman
+- **Thread-Safe**: Uses modern C++ threading features for safe concurrent operations
+- **Comprehensive Logging**: Built-in logger for debugging and monitoring
 
-To run in live development mode, run `wails dev` in the project directory. In another terminal, go into the `frontend`
-directory and run `npm run dev`. The frontend dev server will run on http://localhost:34115. Connect to this in your
-browser and connect to your application.
+## Technology Stack
+
+- **Language**: C++17
+- **GUI Framework**: Qt6 (Widgets)
+- **Package Management**: libalpm (Arch Linux Package Manager library)
+- **AUR Integration**: AUR RPC API via Qt Network + Chaotic AUR Support
+- **Build System**: CMake
+- **Threading**: Qt Concurrent & STL threading
+
+## Prerequisites
+
+### Build Dependencies
+
+```bash
+sudo pacman -S base-devel cmake qt6-base qt6-svg alpm pkgconf
+```
+
+You can optionally also have either either yay or paru if you would like to work with packages from the AUR.
 
 ## Building
 
-To build a redistributable, production mode package, use `wails build`.
+1. Clone the repository:
+```bash
+git clone https://github.com/arch-linux-gui/alg-app-store.git
+cd alg-app-store
+```
+
+2. Run Build Script
+```bash
+# This will create a build directory.
+./build.sh
+```
+
+Binary will be in the build directory.
+
+## Running
+
+### From Build Directory
+
+```bash
+./build/alg-app-store
+```
+
+### From System Installation (if installed)
+
+```bash
+alg-app-store
+```
+
+
+## License
+
+This project is part of the Arch Linux GUI project.
+It is distributed under the MIT License. Check LICENSE.
+
+## Credits
+
+- **Author**: DemonKiller
+- **Original Project**: Wails-based ALG App Store
+- **Rewrite**: Qt6/C++ implementation
+- **Community**: Arch Linux and Qt communities
+
+## Contact
+
+For issues, questions, or contributions, please visit:
+- GitHub: https://github.com/arch-linux-gui/alg-app-store
+- Website: https://arkalinuxgui.org
+- Discord: https://discord.com/invite/NgAFEw9Tkf
