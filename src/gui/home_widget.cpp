@@ -54,12 +54,15 @@ void HomeWidget::loadFeaturedPackages() {
         {"firefox", "Latest", "Fast, Private & Safe Web Browser", "extra"},
         {"gimp", "Latest", "GNU Image Manipulation Program", "extra"},
         {"vlc", "Latest", "Multi-platform MPEG, VCD/DVD, and DivX player", "extra"},
-        {"visual-studio-code-bin", "Latest", "Visual Studio Code (official binary version)", "AUR"},
-        {"libreoffice-still", "Latest", "LibreOffice maintenance branch", "extra"},
+        {"telegram-desktop", "Latest", "Official Telegram Desktop client", "extra"},
+        {"obs-studio", "Latest", "Free, open source software for live streaming and recording", "extra"},
         {"blender", "Latest", "A fully integrated 3D graphics creation suite", "extra"},
-        {"zed", "Latest", "A high-performance, multiplayer code editor", "extra"},
-        {"git", "Latest", "The fast distributed version control system", "extra"},
-        {"google-chrome", "Latest", "The popular web browser by Google", "AUR"}
+        {"spotify", "Latest", "A proprietary music streaming service", "AUR"},
+        {"discord", "Latest", "All-in-one voice and text chat for gamers", "extra"},
+        {"google-chrome", "Latest", "The popular web browser by Google", "AUR"},
+        {"visual-studio-code-bin", "Latest", "Visual Studio Code (official binary version)", "AUR"},
+        {"libreoffice-still", "Latest", "Free and Open Source Office Suite", "extra"},
+        {"zoom", "Latest", "Video Conferencing and Web Conferencing Service", "AUR"}
     };
     
     Logger::info(QString("Loaded %1 featured packages").arg(m_featuredPackages.size()));
