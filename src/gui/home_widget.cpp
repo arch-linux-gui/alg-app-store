@@ -49,7 +49,7 @@ void HomeWidget::setupUi() {
 }
 
 void HomeWidget::loadFeaturedPackages() {
-    // Featured packages list
+    // Featured packages list with initial repositories
     m_featuredPackages = {
         {"firefox", "Latest", "Fast, Private & Safe Web Browser", "extra"},
         {"gimp", "Latest", "GNU Image Manipulation Program", "extra"},
@@ -64,6 +64,21 @@ void HomeWidget::loadFeaturedPackages() {
         {"libreoffice-still", "Latest", "Free and Open Source Office Suite", "extra"},
         {"zoom", "Latest", "Video Conferencing and Web Conferencing Service", "AUR"}
     };
+    
+    // Check if packages marked as AUR are actually available in automated repos (like chaotic-aur)
+    for (auto& pkg : m_featuredPackages) {
+        if (pkg.repository.toLower() == "aur") {
+            PackageInfo repoInfo = AlpmWrapper::instance().getPackageInfo(pkg.name);
+            if (!repoInfo.name.isEmpty() && !repoInfo.repository.isEmpty()) {
+                // Package found in automated repos, use that repository instead
+                pkg.repository = repoInfo.repository;
+                pkg.version = repoInfo.version;
+                pkg.description = repoInfo.description;
+                Logger::info(QString("Package %1 found in %2 repository, using pacman instead of AUR helper")
+                            .arg(pkg.name, pkg.repository));
+            }
+        }
+    }
     
     Logger::info(QString("Loaded %1 featured packages").arg(m_featuredPackages.size()));
 }
