@@ -2,7 +2,7 @@
 - [x] Add launch button on package card if package is installed and remove when uninstalled
 - [] Add detailed mirrorlist tab to set mirrorlist
 - [] Add version information
-- [] 
+- [] Implement an AUR helper in core to remove dependence on paru and yay
 
 
 ## Future Enhancements

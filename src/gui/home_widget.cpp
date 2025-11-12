@@ -75,7 +75,7 @@ void HomeWidget::loadFeaturedPackages() {
                 pkg.repository = repoInfo.repository;
                 pkg.version = repoInfo.version;
                 pkg.description = repoInfo.description;
-                Logger::info(QString("✅ Package %1 found in %2 repository, will use pacman instead of AUR helper")
+                Logger::info(QString("Package %1 found in %2 repository, will use pacman instead of AUR helper")
                             .arg(pkg.name, pkg.repository));
             } else {
                 Logger::debug(QString("Package %1 not found in official repos, will use AUR helper").arg(pkg.name));
