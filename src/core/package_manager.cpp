@@ -41,13 +41,13 @@ void PackageManager::detectHelper() {
         return;
     }
     
-    // Check for paru
-    QString paruPath = QStandardPaths::findExecutable("paru");
-    if (!paruPath.isEmpty()) {
-        m_helper = Helper::Paru;
-        Logger::info("Using paru as package helper");
-        return;
-    }
+    // Check for paru - deprecate because paru doesn't allow running with pkexec
+    // QString paruPath = QStandardPaths::findExecutable("paru");
+    // if (!paruPath.isEmpty()) {
+    //     m_helper = Helper::Paru;
+    //     Logger::info("Using paru as package helper");
+    //     return;
+    // }
     
     // Default to pacman
     m_helper = Helper::Pacman;
@@ -57,7 +57,6 @@ void PackageManager::detectHelper() {
 QString PackageManager::getHelperName() const {
     switch (m_helper) {
         case Helper::Yay: return "yay";
-        case Helper::Paru: return "paru";
         case Helper::Pacman: return "pacman";
         default: return "pacman";
     }
@@ -75,9 +74,10 @@ void PackageManager::installPackage(const QString& packageName, const QString& r
     QString helper = getHelperName();
     
     QString command;
-    if (isAUR && (m_helper == Helper::Yay || m_helper == Helper::Paru)) {
-        // AUR packages - run helper as regular user (no pkexec)
-        command = QString("%1 -S %2 --noconfirm").arg(helper, packageName);
+    if (isAUR && (m_helper == Helper::Yay)) {
+        // AUR packages - use pkexec to get userpassword before hand
+        // Paru has a problem here, so default to yay
+        command = QString("pkexec %1 -S %2 --noconfirm").arg(helper, packageName);
     } else {
         // Official repos and chaotic-aur need root access and use pacman
         command = QString("pkexec pacman -S %1 --noconfirm").arg(packageName);
@@ -110,7 +110,7 @@ void PackageManager::updatePackage(const QString& packageName, const QString& re
     QString helper = getHelperName();
     
     QString command;
-    if (isAUR && (m_helper == Helper::Yay || m_helper == Helper::Paru)) {
+    if (isAUR && (m_helper == Helper::Yay)) {
         // AUR packages - run helper as regular user (no pkexec)
         command = QString("%1 -S %2 --noconfirm").arg(helper, packageName);
     } else {
