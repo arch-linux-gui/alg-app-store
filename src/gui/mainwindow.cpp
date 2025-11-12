@@ -17,15 +17,15 @@ MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , m_tabWidget(std::make_unique<QTabWidget>(this)) {
     
-    setupUi();
-    loadStyleSheet();
-    
-    // Initialize ALPM
+    // Initialize ALPM before creating widgets that might need it
     if (!AlpmWrapper::instance().initialize()) {
         QMessageBox::critical(this, "Error", 
             "Failed to initialize package manager. Please check your system configuration.");
         Logger::error("Failed to initialize ALPM in MainWindow");
     }
+    
+    setupUi();
+    loadStyleSheet();
     
     Logger::info("MainWindow created successfully");
 }

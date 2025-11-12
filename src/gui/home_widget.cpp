@@ -68,14 +68,17 @@ void HomeWidget::loadFeaturedPackages() {
     // Check if packages marked as AUR are actually available in automated repos (like chaotic-aur)
     for (auto& pkg : m_featuredPackages) {
         if (pkg.repository.toLower() == "aur") {
+            Logger::debug(QString("Checking if AUR package %1 is available in official repos...").arg(pkg.name));
             PackageInfo repoInfo = AlpmWrapper::instance().getPackageInfo(pkg.name);
             if (!repoInfo.name.isEmpty() && !repoInfo.repository.isEmpty()) {
                 // Package found in automated repos, use that repository instead
                 pkg.repository = repoInfo.repository;
                 pkg.version = repoInfo.version;
                 pkg.description = repoInfo.description;
-                Logger::info(QString("Package %1 found in %2 repository, using pacman instead of AUR helper")
+                Logger::info(QString("✅ Package %1 found in %2 repository, will use pacman instead of AUR helper")
                             .arg(pkg.name, pkg.repository));
+            } else {
+                Logger::debug(QString("Package %1 not found in official repos, will use AUR helper").arg(pkg.name));
             }
         }
     }
