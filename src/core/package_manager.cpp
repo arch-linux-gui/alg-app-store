@@ -193,13 +193,24 @@ void PackageManager::cancelRunningOperation() {
         Logger::warning("Cancelling running operation...");
         emit operationOutput("\n>>> Operation cancelled by user <<<\n");
         
-        // First try to terminate gracefully
+        // When using pkexec, we need to kill the actual pacman/yay/paru process
+        // not just the pkexec wrapper. Use pkill to terminate all package manager processes.
+        QProcess killProcess;
+        killProcess.start("pkexec", QStringList() << "bash" << "-c" 
+                         << "pkill -TERM pacman; pkill -TERM yay; pkill -TERM paru");
+        killProcess.waitForFinished(2000);
+        
+        // Also terminate the QProcess wrapper
         m_process->terminate();
         
-        // Wait up to 5 seconds for graceful termination
-        if (!m_process->waitForFinished(5000)) {
-            // If it doesn't terminate gracefully, force kill
+        // Wait up to 3 seconds for graceful termination
+        if (!m_process->waitForFinished(3000)) {
+            // Force kill if still running
             Logger::warning("Process did not terminate gracefully, forcing kill...");
+            killProcess.start("pkexec", QStringList() << "bash" << "-c" 
+                             << "pkill -KILL pacman; pkill -KILL yay; pkill -KILL paru");
+            killProcess.waitForFinished(2000);
+            
             m_process->kill();
             m_process->waitForFinished(1000);
         }
