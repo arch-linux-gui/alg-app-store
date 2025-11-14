@@ -945,11 +945,11 @@ void SettingsWidget::onSetupChaoticClicked() {
     msgBox.setWindowTitle("Setup Chaotic-AUR");
     msgBox.setText("Install Chaotic-AUR repository?");
     msgBox.setInformativeText(
-        "This will install:\n"
-        "• chaotic-keyring\n"
-        "• chaotic-mirrorlist\n\n"
-        "These packages are required to use the Chaotic-AUR repository.\n"
-        "You may need to manually add the repository to /etc/pacman.conf if not already configured.");
+        "This will:\n"
+        "1. Download chaotic-keyring and chaotic-mirrorlist packages\n"
+        "2. Install them using pacman\n"
+        "3. Add the repository to /etc/pacman.conf\n\n"
+        "This requires internet connection and administrator privileges.");
     msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     msgBox.setDefaultButton(QMessageBox::Yes);
     
@@ -957,15 +957,37 @@ void SettingsWidget::onSetupChaoticClicked() {
         return;
     }
     
-    m_statusLabel->setText("Installing Chaotic-AUR packages...");
+    m_statusLabel->setText("Setting up Chaotic-AUR repository...");
     m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
     m_statusLabel->show();
     m_setupChaoticButton->setEnabled(false);
     
-    // Install chaotic-keyring and chaotic-mirrorlist
+    // Use a shell script to download and install chaotic-aur packages
+    // This follows the official installation guide from aur.chaotic.cx
+    QString script = 
+        "cd /tmp && "
+        "rm -f chaotic-keyring.pkg.tar.zst chaotic-mirrorlist.pkg.tar.zst && "
+        "curl -L -O https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst && "
+        "curl -L -O https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst && "
+        "pacman -U --noconfirm chaotic-keyring.pkg.tar.zst chaotic-mirrorlist.pkg.tar.zst";
+    
     QProcess* process = new QProcess(this);
+    
+    // Capture both stdout and stderr for debugging
+    process->setProcessChannelMode(QProcess::MergedChannels);
+    
     connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, [this, process](int exitCode, QProcess::ExitStatus exitStatus) {
+        QString output = process->readAll();
+        
+        Logger::info(QString("Chaotic-AUR setup exit code: %1, status: %2")
+                    .arg(exitCode)
+                    .arg(exitStatus == QProcess::NormalExit ? "Normal" : "Crashed"));
+        
+        if (!output.isEmpty()) {
+            Logger::debug(QString("Chaotic-AUR setup output:\n%1").arg(output));
+        }
+        
         process->deleteLater();
         m_setupChaoticButton->setEnabled(true);
         
@@ -980,23 +1002,31 @@ void SettingsWidget::onSetupChaoticClicked() {
             
             QMessageBox::information(this, "Success",
                 "Chaotic-AUR packages installed successfully!\n\n"
-                "If the repository is not yet configured, you may need to add it to /etc/pacman.conf:\n\n"
-                "[chaotic-aur]\n"
-                "Include = /etc/pacman.d/chaotic-mirrorlist");
+                "You can now enable the Chaotic-AUR repository using the checkbox above.\n"
+                "After enabling, remember to sync the package databases.");
         } else {
             m_statusLabel->setText("Failed to install Chaotic-AUR packages.");
             m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
             m_statusLabel->show();
-            Logger::error("Failed to install Chaotic-AUR packages");
+            Logger::error(QString("Failed to install Chaotic-AUR packages. Exit code: %1").arg(exitCode));
+            
+            // Show output in error message if available
+            QString errorDetails = "Possible reasons:\n"
+                                  "• No internet connection\n"
+                                  "• Download failed\n"
+                                  "• Installation cancelled\n"
+                                  "• User denied authentication\n\n";
+            
+            if (!output.isEmpty() && output.length() < 500) {
+                errorDetails += "Error output:\n" + output;
+            }
             
             QMessageBox::critical(this, "Error",
-                "Failed to install Chaotic-AUR packages.\n"
-                "Please check the logs for details.");
+                "Failed to install Chaotic-AUR packages.\n\n" + errorDetails);
         }
     });
     
-    process->start("pkexec", QStringList() << "pacman" << "-S" << "--noconfirm" 
-                   << "chaotic-keyring" << "chaotic-mirrorlist");
+    process->start("pkexec", QStringList() << "bash" << "-c" << script);
 }
 
 void SettingsWidget::onRemoveChaoticClicked() {
