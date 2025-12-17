@@ -10,7 +10,6 @@ PackageManager& PackageManager::instance() {
 
 PackageManager::PackageManager()
     : QObject(nullptr)
-    , m_helper(Helper::Pacman)
     , m_process(std::make_unique<QProcess>()) {
     
     detectHelper();

@@ -9,6 +9,13 @@
 #include <memory>
 #include "../utils/types.h"
 
+/**
+ * @brief Helper class for interacting with the Arch User Repository (AUR).
+ * 
+ * Memory Management:
+ * - m_networkManager: Owned by std::unique_ptr for RAII-style cleanup
+ * - Network replies are managed via Qt parent-child and deleteLater()
+ */
 class AurHelper : public QObject {
     Q_OBJECT
     

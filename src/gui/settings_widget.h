@@ -8,6 +8,12 @@
 #include <QGroupBox>
 #include <QVBoxLayout>
 
+/**
+ * @brief Widget for application and repository settings.
+ * 
+ * Memory Management:
+ * - All Qt widget members use Qt parent-child ownership (raw pointers are non-owning)
+ */
 class SettingsWidget : public QWidget {
     Q_OBJECT
     
@@ -36,33 +42,33 @@ private:
     bool disableChaoticAurInPacmanConf();
     void applySettings();
     
-    // Repository settings
-    QGroupBox* m_repositoryGroup;
-    QCheckBox* m_coreRepoCheckbox;
-    QCheckBox* m_extraRepoCheckbox;
-    QCheckBox* m_multilibRepoCheckbox;
-    QCheckBox* m_chaoticAurCheckbox;
+    // Repository settings (Qt parent-child managed, non-owning pointers)
+    QGroupBox* m_repositoryGroup = nullptr;
+    QCheckBox* m_coreRepoCheckbox = nullptr;
+    QCheckBox* m_extraRepoCheckbox = nullptr;
+    QCheckBox* m_multilibRepoCheckbox = nullptr;
+    QCheckBox* m_chaoticAurCheckbox = nullptr;
     
-    // Chaotic-AUR setup
-    QGroupBox* m_chaoticAurGroup;
-    QPushButton* m_setupChaoticButton;
-    QPushButton* m_removeChaoticButton;
+    // Chaotic-AUR setup (Qt parent-child managed)
+    QGroupBox* m_chaoticAurGroup = nullptr;
+    QPushButton* m_setupChaoticButton = nullptr;
+    QPushButton* m_removeChaoticButton = nullptr;
     
-    // Maintenance settings
-    QGroupBox* m_maintenanceGroup;
-    QPushButton* m_removeLockButton;
-    QPushButton* m_syncReposButton;
-    QPushButton* m_cancelProcessButton;
+    // Maintenance settings (Qt parent-child managed)
+    QGroupBox* m_maintenanceGroup = nullptr;
+    QPushButton* m_removeLockButton = nullptr;
+    QPushButton* m_syncReposButton = nullptr;
+    QPushButton* m_cancelProcessButton = nullptr;
     
-    // Control buttons
-    QPushButton* m_applyButton;
+    // Control buttons (Qt parent-child managed)
+    QPushButton* m_applyButton = nullptr;
     
-    // Status
-    QLabel* m_statusLabel;
+    // Status (Qt parent-child managed)
+    QLabel* m_statusLabel = nullptr;
     
     // Track original state
-    bool m_originalMultilibState;
-    bool m_originalChaoticAurState;
+    bool m_originalMultilibState = false;
+    bool m_originalChaoticAurState = false;
     
 private slots:
     void onApplyClicked();

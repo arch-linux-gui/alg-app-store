@@ -94,8 +94,7 @@ UpdatesWidget::UpdatesWidget(QWidget* parent)
     , m_progressLabel(new QLabel(this))
     , m_toggleLogButton(new QPushButton("Show Logs", this))
     , m_logWidget(new QWidget(this))
-    , m_logViewer(new QTextEdit(this))
-    , m_logVisible(false) {
+    , m_logViewer(new QTextEdit(this)) {
     
     setupUi();
     

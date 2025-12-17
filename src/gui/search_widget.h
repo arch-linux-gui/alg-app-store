@@ -13,6 +13,14 @@
 #include "../utils/types.h"
 #include "../core/aur_helper.h"
 
+/**
+ * @brief Widget for searching packages across repositories.
+ * 
+ * Memory Management:
+ * - m_aurHelper: Owned by std::unique_ptr for explicit lifetime management
+ * - All Qt widget members use Qt parent-child ownership (raw pointers are non-owning)
+ * - Package cards are dynamically created/destroyed in displayResults/clearResults
+ */
 class SearchWidget : public QWidget {
     Q_OBJECT
     
@@ -29,15 +37,18 @@ private:
     void displayResults(const QVector<PackageInfo>& results);
     void clearResults();
     
-    QLineEdit* m_searchInput;
-    QPushButton* m_searchButton;
-    QComboBox* m_filterCombo;
-    QScrollArea* m_scrollArea;
-    QWidget* m_contentWidget;
-    QGridLayout* m_gridLayout;
-    QLabel* m_statusLabel;
+    // Qt parent-child managed widgets (non-owning pointers)
+    QLineEdit* m_searchInput = nullptr;
+    QPushButton* m_searchButton = nullptr;
+    QComboBox* m_filterCombo = nullptr;
+    QScrollArea* m_scrollArea = nullptr;
+    QWidget* m_contentWidget = nullptr;
+    QGridLayout* m_gridLayout = nullptr;
+    QLabel* m_statusLabel = nullptr;
     
+    // Owned resources
     std::unique_ptr<AurHelper> m_aurHelper;
+    
     QVector<PackageInfo> m_currentResults;
     QVector<PackageInfo> m_allResults;
     

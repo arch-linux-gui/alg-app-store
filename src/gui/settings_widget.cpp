@@ -12,23 +12,7 @@
 #include <QWidget>
 
 SettingsWidget::SettingsWidget(QWidget* parent)
-    : QWidget(parent)
-    , m_repositoryGroup(nullptr)
-    , m_coreRepoCheckbox(nullptr)
-    , m_extraRepoCheckbox(nullptr)
-    , m_multilibRepoCheckbox(nullptr)
-    , m_chaoticAurCheckbox(nullptr)
-    , m_chaoticAurGroup(nullptr)
-    , m_setupChaoticButton(nullptr)
-    , m_removeChaoticButton(nullptr)
-    , m_maintenanceGroup(nullptr)
-    , m_removeLockButton(nullptr)
-    , m_syncReposButton(nullptr)
-    , m_cancelProcessButton(nullptr)
-    , m_applyButton(nullptr)
-    , m_statusLabel(nullptr)
-    , m_originalMultilibState(false)
-    , m_originalChaoticAurState(false) {
+    : QWidget(parent) {
     
     setupUi();
     loadCurrentSettings();

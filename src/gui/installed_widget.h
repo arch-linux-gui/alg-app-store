@@ -9,6 +9,13 @@
 #include <QVector>
 #include "../utils/types.h"
 
+/**
+ * @brief Widget displaying installed packages.
+ * 
+ * Memory Management:
+ * - All Qt widget members use Qt parent-child ownership (raw pointers are non-owning)
+ * - Package cards are dynamically created/destroyed in displayPackages/clearResults
+ */
 class InstalledWidget : public QWidget {
     Q_OBJECT
     
@@ -25,12 +32,13 @@ private:
     void filterPackages(const QString& query);
     void clearResults();
     
-    QLineEdit* m_filterInput;
-    QScrollArea* m_scrollArea;
-    QWidget* m_contentWidget;
-    QGridLayout* m_gridLayout;
-    QLabel* m_statusLabel;
-    QLabel* m_countLabel;
+    // Qt parent-child managed widgets (non-owning pointers)
+    QLineEdit* m_filterInput = nullptr;
+    QScrollArea* m_scrollArea = nullptr;
+    QWidget* m_contentWidget = nullptr;
+    QGridLayout* m_gridLayout = nullptr;
+    QLabel* m_statusLabel = nullptr;
+    QLabel* m_countLabel = nullptr;
     
     QVector<PackageInfo> m_allPackages;
     QVector<PackageInfo> m_filteredPackages;

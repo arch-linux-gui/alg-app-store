@@ -12,8 +12,7 @@ PackageCard::PackageCard(const PackageInfo& info, QWidget* parent)
     , m_descriptionLabel(new QLabel(this))
     , m_versionLabel(new QLabel(this))
     , m_repositoryLabel(new QLabel(this))
-    , m_statusLabel(new QLabel(this))
-    , m_isInstalled(false) {
+    , m_statusLabel(new QLabel(this)) {
     
     setupUi();
     checkInstallStatus();

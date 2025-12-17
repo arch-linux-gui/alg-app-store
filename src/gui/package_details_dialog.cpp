@@ -22,7 +22,6 @@
 PackageDetailsDialog::PackageDetailsDialog(const PackageInfo& info, QWidget* parent)
     : QDialog(parent)
     , m_info(info)
-    , m_isInstalled(false)
     , m_nameLabel(new QLabel(this))
     , m_versionLabel(new QLabel(this))
     , m_repositoryLabel(new QLabel(this))
@@ -41,10 +40,7 @@ PackageDetailsDialog::PackageDetailsDialog(const PackageInfo& info, QWidget* par
     , m_progressWidget(new QWidget(this))
     , m_logViewer(new QTextEdit(this))
     , m_toggleLogButton(new QPushButton("Show Logs", this))
-    , m_logWidget(new QWidget(this))
-    , m_logVisible(false)
-    , m_totalPackages(0)
-    , m_currentPackage(0) {
+    , m_logWidget(new QWidget(this)) {
     
     setupUi();
     checkInstallStatus();

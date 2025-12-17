@@ -14,6 +14,13 @@
 
 class UpdateItem;
 
+/**
+ * @brief Widget for displaying and managing package updates.
+ * 
+ * Memory Management:
+ * - All Qt widget members use Qt parent-child ownership (raw pointers are non-owning)
+ * - UpdateItem widgets are dynamically created/destroyed in displayUpdates/clearUpdates
+ */
 class UpdatesWidget : public QWidget {
     Q_OBJECT
     
@@ -33,23 +40,24 @@ private:
     void hideProgress();
     void toggleLogViewer();
     
-    QLineEdit* m_searchInput;
-    QScrollArea* m_scrollArea;
-    QWidget* m_contentWidget;
-    QVBoxLayout* m_contentLayout;
-    QLabel* m_statusLabel;
-    QLabel* m_countLabel;
-    QPushButton* m_updateAllButton;
-    QPushButton* m_checkButton;
+    // Qt parent-child managed widgets (non-owning pointers)
+    QLineEdit* m_searchInput = nullptr;
+    QScrollArea* m_scrollArea = nullptr;
+    QWidget* m_contentWidget = nullptr;
+    QVBoxLayout* m_contentLayout = nullptr;
+    QLabel* m_statusLabel = nullptr;
+    QLabel* m_countLabel = nullptr;
+    QPushButton* m_updateAllButton = nullptr;
+    QPushButton* m_checkButton = nullptr;
     
-    // Progress bar and log viewer
-    QWidget* m_progressWidget;
-    QProgressBar* m_progressBar;
-    QLabel* m_progressLabel;
-    QPushButton* m_toggleLogButton;
-    QWidget* m_logWidget;
-    QTextEdit* m_logViewer;
-    bool m_logVisible;
+    // Progress bar and log viewer (Qt parent-child managed)
+    QWidget* m_progressWidget = nullptr;
+    QProgressBar* m_progressBar = nullptr;
+    QLabel* m_progressLabel = nullptr;
+    QPushButton* m_toggleLogButton = nullptr;
+    QWidget* m_logWidget = nullptr;
+    QTextEdit* m_logViewer = nullptr;
+    bool m_logVisible = false;
     
     QVector<UpdateInfo> m_updates;
     QVector<UpdateInfo> m_filteredUpdates;

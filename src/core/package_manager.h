@@ -7,6 +7,13 @@
 #include <memory>
 #include <mutex>
 
+/**
+ * @brief Singleton class for managing package operations (install, uninstall, update).
+ * 
+ * Memory Management:
+ * - m_process: Owned by std::unique_ptr for RAII-style cleanup and clear ownership
+ * - Thread-safe via m_mutex for operation serialization
+ */
 class PackageManager : public QObject {
     Q_OBJECT
     
@@ -49,9 +56,9 @@ private:
     void detectHelper();
     void executeCommand(const QString& command, const QStringList& args);
     
-    Helper m_helper;
+    Helper m_helper = Helper::Pacman;
     std::unique_ptr<QProcess> m_process;
-    std::mutex m_mutex;
+    mutable std::mutex m_mutex;
     
 private slots:
     void onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
