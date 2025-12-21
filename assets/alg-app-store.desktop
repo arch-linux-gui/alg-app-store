@@ -2,12 +2,12 @@
 Type=Application
 Version=1.0
 Name=App Store
-GenericName=ALG - App Store
-Keywords=utility;system;welcome;
+GenericName=ALG App Store
+Keywords=app;store;software;install;system;
 Encoding=UTF-8
 Terminal=false
 Exec=alg-app-store
-Icon=/usr/share/pixmaps/alg-app-store.png
-Comment=ALG - App Store
-Categories=System;Go;
+Icon=alg-app-store
+Comment=Install all your favourite apps
+Categories=System;Apps;
 StartupNotify=true
