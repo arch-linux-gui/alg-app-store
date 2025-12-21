@@ -1,0 +1,137 @@
+name: Build and Release ALG App Store
+
+on:
+  push:
+    branches: [ "main", "devel", "qt6" ]
+    paths:
+      - '**.cpp'
+      - '**.h'
+      - 'CMakeLists.txt'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [ "main", "devel", "qt6" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      should_release: ${{ steps.check_release.outputs.should_release }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 2  # Need history to check changed files
+      
+    - name: Extract version from CMakeLists.txt
+      id: get_version
+      run: |
+        VERSION=$(grep -oP 'project\(alg-app-store VERSION \K[0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt)
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Detected version: $VERSION"
+    
+    - name: Check if this should trigger a release
+      id: check_release
+      run: |
+        # Only release on main branch when CMakeLists.txt was modified
+        if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event_name }}" == "push" ]]; then
+          # Check if CMakeLists.txt was changed in this push
+          if git diff --name-only HEAD~1 HEAD | grep -q "CMakeLists.txt"; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "Release triggered: CMakeLists.txt changed on main branch"
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            echo "No release: CMakeLists.txt not changed"
+          fi
+        else
+          echo "should_release=false" >> $GITHUB_OUTPUT
+          echo "No release: not on main branch or not a push event"
+        fi
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          qt6-base-dev \
+          qt6-tools-dev \
+          qt6-tools-dev-tools \
+          libalpm-dev \
+          libarchive-dev \
+          libcurl4-openssl-dev \
+          pkg-config
+    
+    - name: Configure CMake
+      run: |
+        mkdir -p build
+        cd build
+        cmake ..
+    
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc)
+    
+    - name: Check build artifacts
+      run: |
+        ls -lh build/alg-app-store
+        file build/alg-app-store
+    
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: alg-app-store-${{ github.ref_name }}-${{ steps.get_version.outputs.version }}
+        path: build/alg-app-store
+        retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: needs.build.outputs.should_release == 'true'
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: alg-app-store-${{ github.ref_name }}-${{ needs.build.outputs.version }}
+        path: ./release
+    
+    - name: Prepare release assets
+      run: |
+        chmod +x ./release/alg-app-store
+        tar -czvf alg-app-store-${{ needs.build.outputs.version }}-linux-x86_64.tar.gz -C ./release alg-app-store
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ needs.build.outputs.version }}
+        name: ALG App Store v${{ needs.build.outputs.version }}
+        body: |
+          ## ALG App Store v${{ needs.build.outputs.version }}
+          
+          A modern package manager GUI for Arch Linux.
+          
+          ### Installation
+          ```bash
+          tar -xzvf alg-app-store-${{ needs.build.outputs.version }}-linux-x86_64.tar.gz
+          sudo mv alg-app-store /usr/local/bin/
+          ```
+          
+          ### Requirements
+          - Qt6 (Core, Gui, Widgets, Network, Concurrent)
+          - libalpm (pacman library)
+          - yay or paru (for AUR support)
+        files: |
+          alg-app-store-${{ needs.build.outputs.version }}-linux-x86_64.tar.gz
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
