@@ -12,6 +12,14 @@ class InstalledWidget;
 class UpdatesWidget;
 class SettingsWidget;
 
+/**
+ * @brief Main application window for ALG App Store.
+ * 
+ * Memory Management:
+ * - m_tabWidget: Owned by std::unique_ptr (central widget)
+ * - Child widgets (m_homeWidget, etc.): Owned by Qt parent-child hierarchy
+ *   through m_tabWidget. Raw pointers are used as non-owning references.
+ */
 class MainWindow : public QMainWindow {
     Q_OBJECT
     
@@ -25,11 +33,13 @@ private:
     void loadStyleSheet();
     
     std::unique_ptr<QTabWidget> m_tabWidget;
-    HomeWidget* m_homeWidget;
-    SearchWidget* m_searchWidget;
-    InstalledWidget* m_installedWidget;
-    UpdatesWidget* m_updatesWidget;
-    SettingsWidget* m_settingsWidget;
+    
+    // Non-owning pointers - owned by m_tabWidget via Qt parent-child hierarchy
+    HomeWidget* m_homeWidget = nullptr;
+    SearchWidget* m_searchWidget = nullptr;
+    InstalledWidget* m_installedWidget = nullptr;
+    UpdatesWidget* m_updatesWidget = nullptr;
+    SettingsWidget* m_settingsWidget = nullptr;
 };
 
 #endif // MAINWINDOW_H

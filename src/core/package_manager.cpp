@@ -10,7 +10,6 @@ PackageManager& PackageManager::instance() {
 
 PackageManager::PackageManager()
     : QObject(nullptr)
-    , m_helper(Helper::Pacman)
     , m_process(std::make_unique<QProcess>()) {
     
     detectHelper();
@@ -41,13 +40,13 @@ void PackageManager::detectHelper() {
         return;
     }
     
-    // Check for paru
-    QString paruPath = QStandardPaths::findExecutable("paru");
-    if (!paruPath.isEmpty()) {
-        m_helper = Helper::Paru;
-        Logger::info("Using paru as package helper");
-        return;
-    }
+    // Check for paru - deprecate because paru doesn't allow running with pkexec
+    // QString paruPath = QStandardPaths::findExecutable("paru");
+    // if (!paruPath.isEmpty()) {
+    //     m_helper = Helper::Paru;
+    //     Logger::info("Using paru as package helper");
+    //     return;
+    // }
     
     // Default to pacman
     m_helper = Helper::Pacman;
@@ -57,7 +56,6 @@ void PackageManager::detectHelper() {
 QString PackageManager::getHelperName() const {
     switch (m_helper) {
         case Helper::Yay: return "yay";
-        case Helper::Paru: return "paru";
         case Helper::Pacman: return "pacman";
         default: return "pacman";
     }
@@ -75,9 +73,10 @@ void PackageManager::installPackage(const QString& packageName, const QString& r
     QString helper = getHelperName();
     
     QString command;
-    if (isAUR && (m_helper == Helper::Yay || m_helper == Helper::Paru)) {
-        // AUR packages - run helper as regular user (no pkexec)
-        command = QString("%1 -S %2 --noconfirm").arg(helper, packageName);
+    if (isAUR && (m_helper == Helper::Yay)) {
+        // AUR packages - use pkexec to get userpassword before hand
+        // Paru has a problem here, so default to yay
+        command = QString("pkexec %1 -S %2 --noconfirm").arg(helper, packageName);
     } else {
         // Official repos and chaotic-aur need root access and use pacman
         command = QString("pkexec pacman -S %1 --noconfirm").arg(packageName);
@@ -110,7 +109,7 @@ void PackageManager::updatePackage(const QString& packageName, const QString& re
     QString helper = getHelperName();
     
     QString command;
-    if (isAUR && (m_helper == Helper::Yay || m_helper == Helper::Paru)) {
+    if (isAUR && (m_helper == Helper::Yay)) {
         // AUR packages - run helper as regular user (no pkexec)
         command = QString("%1 -S %2 --noconfirm").arg(helper, packageName);
     } else {
@@ -186,4 +185,42 @@ void PackageManager::onProcessOutput() {
         Logger::debug(QString("Process output: %1").arg(output.trimmed()));
         emit operationOutput(output);
     }
+}
+
+void PackageManager::cancelRunningOperation() {
+    if (m_process && m_process->state() != QProcess::NotRunning) {
+        Logger::warning("Cancelling running operation...");
+        emit operationOutput("\n>>> Operation cancelled by user <<<\n");
+        
+        // When using pkexec, we need to kill the actual pacman/yay/paru process
+        // not just the pkexec wrapper. Use pkill to terminate all package manager processes.
+        QProcess killProcess;
+        killProcess.start("pkexec", QStringList() << "bash" << "-c" 
+                         << "pkill -TERM pacman; pkill -TERM yay; pkill -TERM paru");
+        killProcess.waitForFinished(2000);
+        
+        // Also terminate the QProcess wrapper
+        m_process->terminate();
+        
+        // Wait up to 3 seconds for graceful termination
+        if (!m_process->waitForFinished(3000)) {
+            // Force kill if still running
+            Logger::warning("Process did not terminate gracefully, forcing kill...");
+            killProcess.start("pkexec", QStringList() << "bash" << "-c" 
+                             << "pkill -KILL pacman; pkill -KILL yay; pkill -KILL paru");
+            killProcess.waitForFinished(2000);
+            
+            m_process->kill();
+            m_process->waitForFinished(1000);
+        }
+        
+        emit operationCompleted(false, "Operation cancelled by user");
+        Logger::info("Operation cancelled successfully");
+    } else {
+        Logger::warning("No operation is currently running");
+    }
+}
+
+bool PackageManager::isOperationRunning() const {
+    return m_process && m_process->state() != QProcess::NotRunning;
 }

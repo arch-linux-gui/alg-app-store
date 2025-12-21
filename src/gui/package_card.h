@@ -6,6 +6,12 @@
 #include <QPushButton>
 #include "../utils/types.h"
 
+/**
+ * @brief A clickable card widget displaying package information.
+ * 
+ * Memory Management:
+ * - All Qt widget members use Qt parent-child ownership (raw pointers are non-owning)
+ */
 class PackageCard : public QWidget {
     Q_OBJECT
     
@@ -29,12 +35,15 @@ private:
     void setupUi();
     
     PackageInfo m_info;
-    QLabel* m_nameLabel;
-    QLabel* m_descriptionLabel;
-    QLabel* m_versionLabel;
-    QLabel* m_repositoryLabel;
-    QLabel* m_statusLabel;
-    bool m_isInstalled;
+    
+    // Qt parent-child managed widgets (non-owning pointers)
+    QLabel* m_nameLabel = nullptr;
+    QLabel* m_descriptionLabel = nullptr;
+    QLabel* m_versionLabel = nullptr;
+    QLabel* m_repositoryLabel = nullptr;
+    QLabel* m_statusLabel = nullptr;
+    
+    bool m_isInstalled = false;
 };
 
 #endif // PACKAGE_CARD_H

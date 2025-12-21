@@ -10,8 +10,8 @@ AlpmWrapper& AlpmWrapper::instance() {
     return instance;
 }
 
-AlpmWrapper::AlpmWrapper()
-    : m_handle(nullptr), m_syncDbs(nullptr), m_initialized(false) {
+AlpmWrapper::AlpmWrapper() {
+    // Member initialization is done in header file
 }
 
 AlpmWrapper::~AlpmWrapper() {

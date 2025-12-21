@@ -117,7 +117,7 @@ void MainWindow::createMenuBar() {
         QMessageBox::about(this, "About ALG App Store",
             "ALG App Store (Beta)\n\n"
             "A modern package manager for Arch Linux\n"
-            "Version: 0.2.16\n"
+            "Version: 0.2.26\n"
             "Built with Qt6 and C++17\n\n"
             "© 2025 Arka Linux GUI");
     });
@@ -128,15 +128,20 @@ void MainWindow::loadStyleSheet() {
     QFile styleFile(":/stylesheet.qss");
     
     if (!styleFile.exists()) {
-        // Try loading from file system
+        // Try loading from current directory (for development)
         styleFile.setFileName("stylesheet.qss");
+    }
+    
+    if (!styleFile.exists()) {
+        // Try loading from system installation path
+        styleFile.setFileName("/usr/share/alg-app-store/stylesheet.qss");
     }
     
     if (styleFile.open(QFile::ReadOnly)) {
         QString styleSheet = QLatin1String(styleFile.readAll());
         qApp->setStyleSheet(styleSheet);
         styleFile.close();
-        Logger::info("Stylesheet loaded successfully");
+        Logger::info(QString("Stylesheet loaded successfully from: %1").arg(styleFile.fileName()));
     } else {
         Logger::warning("Could not load stylesheet");
     }

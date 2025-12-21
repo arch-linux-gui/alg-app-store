@@ -1,6 +1,7 @@
 #include "settings_widget.h"
 #include "../utils/logger.h"
 #include "../core/alpm_wrapper.h"
+#include "../core/package_manager.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
@@ -11,23 +12,7 @@
 #include <QWidget>
 
 SettingsWidget::SettingsWidget(QWidget* parent)
-    : QWidget(parent)
-    , m_repositoryGroup(nullptr)
-    , m_coreRepoCheckbox(nullptr)
-    , m_extraRepoCheckbox(nullptr)
-    , m_multilibRepoCheckbox(nullptr)
-    , m_chaoticAurCheckbox(nullptr)
-    , m_chaoticAurGroup(nullptr)
-    , m_setupChaoticButton(nullptr)
-    , m_removeChaoticButton(nullptr)
-    , m_maintenanceGroup(nullptr)
-    , m_removeLockButton(nullptr)
-    , m_syncReposButton(nullptr)
-    , m_applyButton(nullptr)
-    , m_revertButton(nullptr)
-    , m_statusLabel(nullptr)
-    , m_originalMultilibState(false)
-    , m_originalChaoticAurState(false) {
+    : QWidget(parent) {
     
     setupUi();
     loadCurrentSettings();
@@ -79,24 +64,6 @@ void SettingsWidget::setupUi() {
     m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
     m_statusLabel->hide();
     mainLayout->addWidget(m_statusLabel);
-    
-    // Buttons
-    auto* buttonLayout = new QHBoxLayout();
-    buttonLayout->addStretch();
-    
-    m_revertButton = new QPushButton("Revert", contentWidget);
-    m_revertButton->setMinimumWidth(100);
-    m_revertButton->setEnabled(false);
-    connect(m_revertButton, &QPushButton::clicked, this, &SettingsWidget::onRevertClicked);
-    buttonLayout->addWidget(m_revertButton);
-    
-    m_applyButton = new QPushButton("Apply", contentWidget);
-    m_applyButton->setMinimumWidth(100);
-    m_applyButton->setEnabled(false);
-    connect(m_applyButton, &QPushButton::clicked, this, &SettingsWidget::onApplyClicked);
-    buttonLayout->addWidget(m_applyButton);
-    
-    mainLayout->addLayout(buttonLayout);
     
     // Add stretch at the bottom
     mainLayout->addStretch();
@@ -164,6 +131,18 @@ void SettingsWidget::createRepositorySettings() {
     infoLabel->setWordWrap(true);
     infoLabel->setStyleSheet("QLabel { color: #888; font-style: italic; margin-top: 10px; }");
     repoLayout->addWidget(infoLabel);
+    
+    // Apply button
+    auto* applyLayout = new QHBoxLayout();
+    applyLayout->addStretch();
+    
+    m_applyButton = new QPushButton("Apply Changes", this);
+    m_applyButton->setMinimumWidth(150);
+    m_applyButton->setEnabled(false);
+    connect(m_applyButton, &QPushButton::clicked, this, &SettingsWidget::onApplyClicked);
+    applyLayout->addWidget(m_applyButton);
+    
+    repoLayout->addLayout(applyLayout);
     
     m_repositoryGroup->setLayout(repoLayout);
 }
@@ -315,6 +294,40 @@ void SettingsWidget::createMaintenanceSettings() {
     syncInfoLabel->setWordWrap(true);
     syncInfoLabel->setStyleSheet("QLabel { color: #888; font-size: 11px; margin-top: 5px; margin-left: 10px; }");
     maintenanceLayout->addWidget(syncInfoLabel);
+    
+    // Spacer
+    maintenanceLayout->addSpacing(15);
+    
+    // Cancel running process section
+    auto* cancelProcessLayout = new QHBoxLayout();
+    
+    auto* cancelProcessLabel = new QLabel(
+        "Cancel Running Process:",
+        this);
+    cancelProcessLabel->setStyleSheet("QLabel { font-weight: bold; }");
+    cancelProcessLayout->addWidget(cancelProcessLabel);
+    
+    cancelProcessLayout->addStretch();
+    
+    m_cancelProcessButton = new QPushButton("Cancel Process", this);
+    m_cancelProcessButton->setMinimumWidth(150);
+    m_cancelProcessButton->setToolTip(
+        "Cancel any running package operation (install, uninstall, update).\n"
+        "Use this if an operation is stuck or taking too long.\n"
+        "This is different from removing the lock file - it actually stops the running process.");
+    connect(m_cancelProcessButton, &QPushButton::clicked, this, &SettingsWidget::onCancelProcessClicked);
+    cancelProcessLayout->addWidget(m_cancelProcessButton);
+    
+    maintenanceLayout->addLayout(cancelProcessLayout);
+    
+    // Cancel process info
+    auto* cancelInfoLabel = new QLabel(
+        "Use this to cancel a stuck installation, uninstallation, or update process.\n"
+        "This is useful when you see 'Another operation is already in progress' and want to stop it.",
+        this);
+    cancelInfoLabel->setWordWrap(true);
+    cancelInfoLabel->setStyleSheet("QLabel { color: #888; font-size: 11px; margin-top: 5px; margin-left: 10px; }");
+    maintenanceLayout->addWidget(cancelInfoLabel);
     
     m_maintenanceGroup->setLayout(maintenanceLayout);
 }
@@ -548,27 +561,37 @@ bool SettingsWidget::enableChaoticAurInPacmanConf() {
     
     QStringList lines;
     QTextStream in(&file);
-    bool chaoticAurSectionFound = false;
-    bool chaoticAurExists = false;
+    bool inCommentedChaoticAurSection = false;
+    bool chaoticAurSectionExists = false;
     
     while (!in.atEnd()) {
         QString line = in.readLine();
+        QString trimmedLine = line.trimmed();
         
-        // Check if chaotic-aur section already exists (uncommented)
-        if (line.trimmed() == "[chaotic-aur]") {
-            chaoticAurExists = true;
-        }
-        
-        // Check if this is a commented [chaotic-aur] section
-        if (line.trimmed() == "#[chaotic-aur]") {
-            lines.append("[chaotic-aur]");
-            chaoticAurSectionFound = true;
+        // Check if chaotic-aur section already exists (uncommented or commented)
+        if (trimmedLine == "[chaotic-aur]" || trimmedLine == "#[chaotic-aur]") {
+            chaoticAurSectionExists = true;
+            
+            // If it's commented, uncomment it
+            if (trimmedLine == "#[chaotic-aur]") {
+                lines.append("[chaotic-aur]");
+                inCommentedChaoticAurSection = true;
+            } else {
+                // Already uncommented, keep as is
+                lines.append(line);
+            }
         } 
         // Check if the Include/Server line in chaotic-aur section is commented
-        else if (chaoticAurSectionFound && line.trimmed().startsWith("#") && 
-                 (line.contains("Include") || line.contains("Server"))) {
-            lines.append(line.mid(line.indexOf('#') + 1)); // Remove the # comment character
-            chaoticAurSectionFound = false; // Reset flag after processing
+        else if (inCommentedChaoticAurSection && trimmedLine.startsWith("#") && 
+                 (trimmedLine.contains("Include") || trimmedLine.contains("Server"))) {
+            // Remove the # comment character
+            lines.append(line.mid(line.indexOf('#') + 1));
+            inCommentedChaoticAurSection = false;
+        }
+        // Check if we hit another section, reset flag
+        else if (trimmedLine.startsWith("[") && trimmedLine != "[chaotic-aur]" && trimmedLine != "#[chaotic-aur]") {
+            lines.append(line);
+            inCommentedChaoticAurSection = false;
         }
         else {
             lines.append(line);
@@ -577,7 +600,7 @@ bool SettingsWidget::enableChaoticAurInPacmanConf() {
     file.close();
     
     // If chaotic-aur section doesn't exist at all, add it
-    if (!chaoticAurExists && !chaoticAurSectionFound) {
+    if (!chaoticAurSectionExists) {
         lines.append("");
         lines.append("[chaotic-aur]");
         lines.append("Include = /etc/pacman.d/chaotic-mirrorlist");
@@ -628,18 +651,24 @@ bool SettingsWidget::disableChaoticAurInPacmanConf() {
         QString line = in.readLine();
         QString trimmedLine = line.trimmed();
         
-        // Check if this is [chaotic-aur] section
+        // Check if this is [chaotic-aur] section (uncommented or already commented)
         if (trimmedLine == "[chaotic-aur]") {
             lines.append("#[chaotic-aur]");
             inChaoticAurSection = true;
         }
-        // Check if we're in chaotic-aur section and this is the Include/Server line
+        else if (trimmedLine == "#[chaotic-aur]") {
+            // Already commented, keep as is
+            lines.append(line);
+            inChaoticAurSection = false;
+        }
+        // Check if we're in chaotic-aur section and this is the Include/Server line (not already commented)
         else if (inChaoticAurSection && !trimmedLine.startsWith("#") &&
                  (trimmedLine.startsWith("Include") || trimmedLine.startsWith("Server"))) {
             lines.append("#" + line);
+            inChaoticAurSection = false;
         }
         // Check if we hit another section
-        else if (trimmedLine.startsWith("[") && trimmedLine != "[chaotic-aur]") {
+        else if (trimmedLine.startsWith("[") && trimmedLine != "[chaotic-aur]" && trimmedLine != "#[chaotic-aur]") {
             lines.append(line);
             inChaoticAurSection = false;
         }
@@ -680,11 +709,10 @@ bool SettingsWidget::disableChaoticAurInPacmanConf() {
 }
 
 void SettingsWidget::onSettingsChanged() {
-    // Enable apply and revert buttons when settings change
+    // Enable apply button when settings change
     bool hasChanges = (m_multilibRepoCheckbox->isChecked() != m_originalMultilibState) ||
                       (m_chaoticAurCheckbox->isChecked() != m_originalChaoticAurState);
     m_applyButton->setEnabled(hasChanges);
-    m_revertButton->setEnabled(hasChanges);
     m_statusLabel->hide();
 }
 
@@ -785,7 +813,6 @@ void SettingsWidget::onApplyClicked() {
         m_statusLabel->show();
         
         m_applyButton->setEnabled(false);
-        m_revertButton->setEnabled(false);
         
         // Suggest database sync
             auto reply = QMessageBox::question(this, "Sync Package Database",
@@ -818,19 +845,6 @@ void SettingsWidget::onApplyClicked() {
         m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
         m_statusLabel->show();
     }
-}
-
-void SettingsWidget::onRevertClicked() {
-    // Revert to original state
-    m_multilibRepoCheckbox->setChecked(m_originalMultilibState);
-    m_chaoticAurCheckbox->setChecked(m_originalChaoticAurState);
-    m_applyButton->setEnabled(false);
-    m_revertButton->setEnabled(false);
-    m_statusLabel->setText("Changes reverted");
-    m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
-    m_statusLabel->show();
-    
-    Logger::info("Settings reverted to original state");
 }
 
 bool SettingsWidget::isMultilibEnabled() const {
@@ -915,11 +929,11 @@ void SettingsWidget::onSetupChaoticClicked() {
     msgBox.setWindowTitle("Setup Chaotic-AUR");
     msgBox.setText("Install Chaotic-AUR repository?");
     msgBox.setInformativeText(
-        "This will install:\n"
-        "• chaotic-keyring\n"
-        "• chaotic-mirrorlist\n\n"
-        "These packages are required to use the Chaotic-AUR repository.\n"
-        "You may need to manually add the repository to /etc/pacman.conf if not already configured.");
+        "This will:\n"
+        "1. Download chaotic-keyring and chaotic-mirrorlist packages\n"
+        "2. Install them using pacman\n"
+        "3. Add the repository to /etc/pacman.conf\n\n"
+        "This requires internet connection and administrator privileges.");
     msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     msgBox.setDefaultButton(QMessageBox::Yes);
     
@@ -927,15 +941,37 @@ void SettingsWidget::onSetupChaoticClicked() {
         return;
     }
     
-    m_statusLabel->setText("Installing Chaotic-AUR packages...");
+    m_statusLabel->setText("Setting up Chaotic-AUR repository...");
     m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
     m_statusLabel->show();
     m_setupChaoticButton->setEnabled(false);
     
-    // Install chaotic-keyring and chaotic-mirrorlist
+    // Use a shell script to download and install chaotic-aur packages
+    // This follows the official installation guide from aur.chaotic.cx
+    QString script = 
+        "cd /tmp && "
+        "rm -f chaotic-keyring.pkg.tar.zst chaotic-mirrorlist.pkg.tar.zst && "
+        "curl -L -O https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst && "
+        "curl -L -O https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst && "
+        "pacman -U --noconfirm chaotic-keyring.pkg.tar.zst chaotic-mirrorlist.pkg.tar.zst";
+    
     QProcess* process = new QProcess(this);
+    
+    // Capture both stdout and stderr for debugging
+    process->setProcessChannelMode(QProcess::MergedChannels);
+    
     connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, [this, process](int exitCode, QProcess::ExitStatus exitStatus) {
+        QString output = process->readAll();
+        
+        Logger::info(QString("Chaotic-AUR setup exit code: %1, status: %2")
+                    .arg(exitCode)
+                    .arg(exitStatus == QProcess::NormalExit ? "Normal" : "Crashed"));
+        
+        if (!output.isEmpty()) {
+            Logger::debug(QString("Chaotic-AUR setup output:\n%1").arg(output));
+        }
+        
         process->deleteLater();
         m_setupChaoticButton->setEnabled(true);
         
@@ -950,23 +986,31 @@ void SettingsWidget::onSetupChaoticClicked() {
             
             QMessageBox::information(this, "Success",
                 "Chaotic-AUR packages installed successfully!\n\n"
-                "If the repository is not yet configured, you may need to add it to /etc/pacman.conf:\n\n"
-                "[chaotic-aur]\n"
-                "Include = /etc/pacman.d/chaotic-mirrorlist");
+                "You can now enable the Chaotic-AUR repository using the checkbox above.\n"
+                "After enabling, remember to sync the package databases.");
         } else {
             m_statusLabel->setText("Failed to install Chaotic-AUR packages.");
             m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
             m_statusLabel->show();
-            Logger::error("Failed to install Chaotic-AUR packages");
+            Logger::error(QString("Failed to install Chaotic-AUR packages. Exit code: %1").arg(exitCode));
+            
+            // Show output in error message if available
+            QString errorDetails = "Possible reasons:\n"
+                                  "• No internet connection\n"
+                                  "• Download failed\n"
+                                  "• Installation cancelled\n"
+                                  "• User denied authentication\n\n";
+            
+            if (!output.isEmpty() && output.length() < 500) {
+                errorDetails += "Error output:\n" + output;
+            }
             
             QMessageBox::critical(this, "Error",
-                "Failed to install Chaotic-AUR packages.\n"
-                "Please check the logs for details.");
+                "Failed to install Chaotic-AUR packages.\n\n" + errorDetails);
         }
     });
     
-    process->start("pkexec", QStringList() << "pacman" << "-S" << "--noconfirm" 
-                   << "chaotic-keyring" << "chaotic-mirrorlist");
+    process->start("pkexec", QStringList() << "bash" << "-c" << script);
 }
 
 void SettingsWidget::onRemoveChaoticClicked() {
@@ -1082,4 +1126,49 @@ void SettingsWidget::onSyncReposClicked() {
     });
     
     process->start("pkexec", QStringList() << "pacman" << "-Sy");
+}
+
+void SettingsWidget::onCancelProcessClicked() {
+    // Check if there's actually a process running
+    if (!PackageManager::instance().isOperationRunning()) {
+        QMessageBox::information(this, "No Process Running",
+            "There is no package operation currently running.\n"
+            "Nothing to cancel.");
+        return;
+    }
+    
+    // Show confirmation dialog
+    QMessageBox msgBox(this);
+    msgBox.setIcon(QMessageBox::Warning);
+    msgBox.setWindowTitle("Cancel Running Process");
+    msgBox.setText("Are you sure you want to cancel the running package operation?");
+    msgBox.setInformativeText(
+        "This will stop the current installation, uninstallation, or update process.\n\n"
+        "WARNING: Cancelling a package operation may leave your system in an inconsistent state.\n"
+        "You may need to run the operation again to complete it properly.\n\n"
+        "It's recommended to only cancel if the process is truly stuck or unresponsive.");
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::No);
+    
+    if (msgBox.exec() != QMessageBox::Yes) {
+        return;
+    }
+    
+    m_statusLabel->setText("Cancelling running process...");
+    m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
+    m_statusLabel->show();
+    
+    // Cancel the operation
+    PackageManager::instance().cancelRunningOperation();
+    
+    m_statusLabel->setText("Process cancelled successfully!");
+    m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
+    m_statusLabel->show();
+    
+    Logger::info("User cancelled running package operation from settings");
+    
+    QMessageBox::information(this, "Process Cancelled",
+        "The running package operation has been cancelled.\n\n"
+        "If you were in the middle of installing or updating a package, "
+        "you may need to run the operation again to complete it.");
 }
