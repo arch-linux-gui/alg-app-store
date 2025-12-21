@@ -2,28 +2,47 @@ name: Build and Release ALG App Store
 
 on:
   push:
-    branches: [ "main", "devel", "qt6/c++" ]
+    branches: [ "main", "devel", "qt6" ]
     paths:
       - '**.cpp'
       - '**.h'
       - 'CMakeLists.txt'
       - '.github/workflows/**'
   pull_request:
-    branches: [ "main", "devel", "qt6/c++" ]
+    branches: [ "main", "devel", "qt6" ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
     outputs:
       version: ${{ steps.get_version.outputs.version }}
       should_release: ${{ steps.check_release.outputs.should_release }}
     
     steps:
+    - name: Install base dependencies
+      run: |
+        pacman -Syu --noconfirm
+        pacman -S --noconfirm --needed \
+          base-devel \
+          git \
+          cmake \
+          qt6-base \
+          qt6-tools \
+          pacman \
+          libarchive \
+          curl \
+          pkgconf
+    
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 2  # Need history to check changed files
+    
+    - name: Mark git directory as safe
+      run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       
     - name: Extract version from CMakeLists.txt
       id: get_version
@@ -49,20 +68,6 @@ jobs:
           echo "should_release=false" >> $GITHUB_OUTPUT
           echo "No release: not on main branch or not a push event"
         fi
-      
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          build-essential \
-          cmake \
-          qt6-base-dev \
-          qt6-tools-dev \
-          qt6-tools-dev-tools \
-          libalpm-dev \
-          libarchive-dev \
-          libcurl4-openssl-dev \
-          pkg-config
     
     - name: Configure CMake
       run: |
