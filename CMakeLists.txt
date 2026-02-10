@@ -34,6 +34,7 @@ set(SOURCES
     # Core
     src/core/alpm_wrapper.cpp
     src/core/aur_helper.cpp
+    src/core/auth_manager.cpp
     src/core/package_manager.cpp
     
     # GUI
@@ -55,6 +56,7 @@ set(HEADERS
     # Core
     src/core/alpm_wrapper.h
     src/core/aur_helper.h
+    src/core/auth_manager.h
     src/core/package_manager.h
     
     # GUI
