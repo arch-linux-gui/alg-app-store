@@ -1,4 +1,5 @@
 #include "package_manager.h"
+#include "auth_manager.h"
 #include "../utils/logger.h"
 #include <QStandardPaths>
 #include <QFile>
@@ -40,7 +41,7 @@ void PackageManager::detectHelper() {
         return;
     }
     
-    // Check for paru - deprecate because paru doesn't allow running with pkexec
+    // Check for paru - deprecated because paru doesn't allow running as root
     // QString paruPath = QStandardPaths::findExecutable("paru");
     // if (!paruPath.isEmpty()) {
     //     m_helper = Helper::Paru;
@@ -72,17 +73,14 @@ void PackageManager::installPackage(const QString& packageName, const QString& r
     bool isAUR = repoLower == "aur";
     QString helper = getHelperName();
     
-    QString command;
     if (isAUR && (m_helper == Helper::Yay)) {
-        // AUR packages - use pkexec to get userpassword before hand
+        // AUR packages need sudo for yay
         // Paru has a problem here, so default to yay
-        command = QString("pkexec %1 -S %2 --noconfirm").arg(helper, packageName);
+        executeCommand("sudo", QStringList() << "-S" << helper << "-S" << packageName << "--noconfirm", true);
     } else {
         // Official repos and chaotic-aur need root access and use pacman
-        command = QString("pkexec pacman -S %1 --noconfirm").arg(packageName);
+        executeCommand("sudo", QStringList() << "-S" << "pacman" << "-S" << packageName << "--noconfirm", true);
     }
-    
-    executeCommand("sh", QStringList() << "-c" << command);
 }
 
 void PackageManager::uninstallPackage(const QString& packageName, const QString& repository) {
@@ -92,9 +90,7 @@ void PackageManager::uninstallPackage(const QString& packageName, const QString&
     emit operationStarted(QString("Uninstalling %1...").arg(packageName));
     
     // Uninstall always needs root (even for AUR packages, they're in the system db once installed)
-    QString command = QString("pkexec pacman -Rdd %1 --noconfirm").arg(packageName);
-    
-    executeCommand("sh", QStringList() << "-c" << command);
+    executeCommand("sudo", QStringList() << "-S" << "pacman" << "-Rdd" << packageName << "--noconfirm", true);
 }
 
 void PackageManager::updatePackage(const QString& packageName, const QString& repository) {
@@ -108,16 +104,13 @@ void PackageManager::updatePackage(const QString& packageName, const QString& re
     bool isAUR = repoLower == "aur";
     QString helper = getHelperName();
     
-    QString command;
     if (isAUR && (m_helper == Helper::Yay)) {
-        // AUR packages - run helper as regular user (no pkexec)
-        command = QString("%1 -S %2 --noconfirm").arg(helper, packageName);
+        // AUR packages - run helper as regular user (no sudo)
+        executeCommand(helper, QStringList() << "-S" << packageName << "--noconfirm");
     } else {
         // Official repos and chaotic-aur need root access and use pacman
-        command = QString("pkexec pacman -S %1 --noconfirm").arg(packageName);
+        executeCommand("sudo", QStringList() << "-S" << "pacman" << "-S" << packageName << "--noconfirm", true);
     }
-    
-    executeCommand("sh", QStringList() << "-c" << command);
 }
 
 void PackageManager::updateAllPackages() {
@@ -126,35 +119,38 @@ void PackageManager::updateAllPackages() {
     Logger::info("Updating all packages");
     emit operationStarted("Updating all packages...");
     
-    QString command = QString("pkexec %1 -Syu --noconfirm")
-                        .arg(getHelperName());
-    
-    executeCommand("sh", QStringList() << "-c" << command);
+    executeCommand("sudo", QStringList() << "-S" << getHelperName() << "-Syu" << "--noconfirm", true);
 }
 
-void PackageManager::executeCommand(const QString& command, const QStringList& args) {
+void PackageManager::executeCommand(const QString& command, const QStringList& args, bool needsAuth) {
     if (m_process->state() != QProcess::NotRunning) {
         Logger::warning("Another operation is already running");
         emit operationError("Another operation is already in progress");
         return;
     }
-    
+
     // Merge stdout and stderr so we capture all output
     m_process->setProcessChannelMode(QProcess::MergedChannels);
-    
+
     Logger::debug(QString("Executing: %1 %2").arg(command, args.join(" ")));
-    
+
     // Emit the actual command being executed to the UI for visibility
     QString fullCommand = command + " " + args.join(" ");
     emit operationOutput(QString(">> Executing: %1\n").arg(fullCommand));
-    
+
     m_process->start(command, args);
-    
+
     // Check if process started successfully
     if (!m_process->waitForStarted(3000)) {
         QString error = QString("Failed to start process: %1").arg(m_process->errorString());
         Logger::error(error);
         emit operationError(error);
+        return;
+    }
+
+    // Write stored password to sudo's stdin if this is an elevated operation
+    if (needsAuth) {
+        AuthManager::instance().writePasswordToProcess(m_process.get());
     }
 }
 
@@ -191,29 +187,35 @@ void PackageManager::cancelRunningOperation() {
     if (m_process && m_process->state() != QProcess::NotRunning) {
         Logger::warning("Cancelling running operation...");
         emit operationOutput("\n>>> Operation cancelled by user <<<\n");
-        
-        // When using pkexec, we need to kill the actual pacman/yay/paru process
-        // not just the pkexec wrapper. Use pkill to terminate all package manager processes.
+
+        // When using sudo, we need to kill the actual pacman/yay/paru process
+        // not just the sudo wrapper. Use pkill to terminate all package manager processes.
         QProcess killProcess;
-        killProcess.start("pkexec", QStringList() << "bash" << "-c" 
+        killProcess.start("sudo", QStringList() << "-S" << "bash" << "-c"
                          << "pkill -TERM pacman; pkill -TERM yay; pkill -TERM paru");
+        if (killProcess.waitForStarted(3000)) {
+            AuthManager::instance().writePasswordToProcess(&killProcess);
+        }
         killProcess.waitForFinished(2000);
-        
+
         // Also terminate the QProcess wrapper
         m_process->terminate();
-        
+
         // Wait up to 3 seconds for graceful termination
         if (!m_process->waitForFinished(3000)) {
             // Force kill if still running
             Logger::warning("Process did not terminate gracefully, forcing kill...");
-            killProcess.start("pkexec", QStringList() << "bash" << "-c" 
+            killProcess.start("sudo", QStringList() << "-S" << "bash" << "-c"
                              << "pkill -KILL pacman; pkill -KILL yay; pkill -KILL paru");
+            if (killProcess.waitForStarted(3000)) {
+                AuthManager::instance().writePasswordToProcess(&killProcess);
+            }
             killProcess.waitForFinished(2000);
-            
+
             m_process->kill();
             m_process->waitForFinished(1000);
         }
-        
+
         emit operationCompleted(false, "Operation cancelled by user");
         Logger::info("Operation cancelled successfully");
     } else {

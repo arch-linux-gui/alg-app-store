@@ -1,6 +1,7 @@
 #include "settings_widget.h"
 #include "../utils/logger.h"
 #include "../core/alpm_wrapper.h"
+#include "../core/auth_manager.h"
 #include "../core/package_manager.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -455,31 +456,34 @@ bool SettingsWidget::enableMultilibInPacmanConf() {
     }
     file.close();
     
-    // Write back to file using pkexec for elevated privileges
+    // Write modified config to a temp file, then copy with elevated privileges
     QString tempFile = "/tmp/pacman.conf.tmp";
     QFile temp(tempFile);
     if (!temp.open(QIODevice::WriteOnly | QIODevice::Text)) {
         Logger::error("Failed to create temporary file");
         return false;
     }
-    
+
     QTextStream out(&temp);
     for (const QString& line : lines) {
         out << line << "\n";
     }
     temp.close();
-    
-    // Use pkexec to copy the file with elevated privileges
+
+    // Use sudo to copy the file with elevated privileges
     QProcess process;
-    process.start("pkexec", QStringList() << "cp" << tempFile << "/etc/pacman.conf");
+    process.start("sudo", QStringList() << "-S" << "cp" << tempFile << "/etc/pacman.conf");
+    if (process.waitForStarted(3000)) {
+        AuthManager::instance().writePasswordToProcess(&process);
+    }
     process.waitForFinished(30000); // 30 second timeout
-    
+
     if (process.exitCode() != 0) {
         Logger::error("Failed to update pacman.conf with elevated privileges");
         QFile::remove(tempFile);
         return false;
     }
-    
+
     QFile::remove(tempFile);
     Logger::info("Successfully enabled multilib repository");
     return true;
@@ -522,31 +526,34 @@ bool SettingsWidget::disableMultilibInPacmanConf() {
     }
     file.close();
     
-    // Write back to file using pkexec for elevated privileges
+    // Write back to file using sudo for elevated privileges
     QString tempFile = "/tmp/pacman.conf.tmp";
     QFile temp(tempFile);
     if (!temp.open(QIODevice::WriteOnly | QIODevice::Text)) {
         Logger::error("Failed to create temporary file");
         return false;
     }
-    
+
     QTextStream out(&temp);
     for (const QString& line : lines) {
         out << line << "\n";
     }
     temp.close();
-    
-    // Use pkexec to copy the file with elevated privileges
+
+    // Use sudo to copy the file with elevated privileges
     QProcess process;
-    process.start("pkexec", QStringList() << "cp" << tempFile << "/etc/pacman.conf");
+    process.start("sudo", QStringList() << "-S" << "cp" << tempFile << "/etc/pacman.conf");
+    if (process.waitForStarted(3000)) {
+        AuthManager::instance().writePasswordToProcess(&process);
+    }
     process.waitForFinished(30000); // 30 second timeout
-    
+
     if (process.exitCode() != 0) {
         Logger::error("Failed to update pacman.conf with elevated privileges");
         QFile::remove(tempFile);
         return false;
     }
-    
+
     QFile::remove(tempFile);
     Logger::info("Successfully disabled multilib repository");
     return true;
@@ -606,31 +613,34 @@ bool SettingsWidget::enableChaoticAurInPacmanConf() {
         lines.append("Include = /etc/pacman.d/chaotic-mirrorlist");
     }
     
-    // Write back to file using pkexec for elevated privileges
+    // Write back to file using sudo for elevated privileges
     QString tempFile = "/tmp/pacman.conf.tmp";
     QFile temp(tempFile);
     if (!temp.open(QIODevice::WriteOnly | QIODevice::Text)) {
         Logger::error("Failed to create temporary file");
         return false;
     }
-    
+
     QTextStream out(&temp);
     for (const QString& line : lines) {
         out << line << "\n";
     }
     temp.close();
-    
-    // Use pkexec to copy the file with elevated privileges
+
+    // Use sudo to copy the file with elevated privileges
     QProcess process;
-    process.start("pkexec", QStringList() << "cp" << tempFile << "/etc/pacman.conf");
+    process.start("sudo", QStringList() << "-S" << "cp" << tempFile << "/etc/pacman.conf");
+    if (process.waitForStarted(3000)) {
+        AuthManager::instance().writePasswordToProcess(&process);
+    }
     process.waitForFinished(30000); // 30 second timeout
-    
+
     if (process.exitCode() != 0) {
         Logger::error("Failed to update pacman.conf with elevated privileges");
         QFile::remove(tempFile);
         return false;
     }
-    
+
     QFile::remove(tempFile);
     Logger::info("Successfully enabled chaotic-aur repository");
     return true;
@@ -678,31 +688,34 @@ bool SettingsWidget::disableChaoticAurInPacmanConf() {
     }
     file.close();
     
-    // Write back to file using pkexec for elevated privileges
+    // Write back to file using sudo for elevated privileges
     QString tempFile = "/tmp/pacman.conf.tmp";
     QFile temp(tempFile);
     if (!temp.open(QIODevice::WriteOnly | QIODevice::Text)) {
         Logger::error("Failed to create temporary file");
         return false;
     }
-    
+
     QTextStream out(&temp);
     for (const QString& line : lines) {
         out << line << "\n";
     }
     temp.close();
-    
-    // Use pkexec to copy the file with elevated privileges
+
+    // Use sudo to copy the file with elevated privileges
     QProcess process;
-    process.start("pkexec", QStringList() << "cp" << tempFile << "/etc/pacman.conf");
+    process.start("sudo", QStringList() << "-S" << "cp" << tempFile << "/etc/pacman.conf");
+    if (process.waitForStarted(3000)) {
+        AuthManager::instance().writePasswordToProcess(&process);
+    }
     process.waitForFinished(30000); // 30 second timeout
-    
+
     if (process.exitCode() != 0) {
         Logger::error("Failed to update pacman.conf with elevated privileges");
         QFile::remove(tempFile);
         return false;
     }
-    
+
     QFile::remove(tempFile);
     Logger::info("Successfully disabled chaotic-aur repository");
     return true;
@@ -727,13 +740,11 @@ void SettingsWidget::onApplyClicked() {
         // Show confirmation dialog
         QString message;
         if (currentMultilibState) {
-            message = "This will enable the multilib repository by modifying /etc/pacman.conf.\n"
-                     "You will be prompted for administrator privileges.\n\n"
-                     "After enabling, you should run 'sudo pacman -Sy' to sync the databases.\n\n"
+            message = "This will enable the multilib repository by modifying /etc/pacman.conf.\n\n"
+                     "After enabling, you should sync the databases.\n\n"
                      "Do you want to continue?";
         } else {
-            message = "This will disable the multilib repository by modifying /etc/pacman.conf.\n"
-                     "You will be prompted for administrator privileges.\n\n"
+            message = "This will disable the multilib repository by modifying /etc/pacman.conf.\n\n"
                      "Do you want to continue?";
         }
         
@@ -768,14 +779,12 @@ void SettingsWidget::onApplyClicked() {
         // Show confirmation dialog
         QString message;
         if (currentChaoticAurState) {
-            message = "This will enable the chaotic-aur repository by modifying /etc/pacman.conf.\n"
-                     "You will be prompted for administrator privileges.\n\n"
+            message = "This will enable the chaotic-aur repository by modifying /etc/pacman.conf.\n\n"
                      "Note: Make sure chaotic-keyring and chaotic-mirrorlist are installed first.\n\n"
-                     "After enabling, you should run 'sudo pacman -Sy' to sync the databases.\n\n"
+                     "After enabling, you should sync the databases.\n\n"
                      "Do you want to continue?";
         } else {
-            message = "This will disable the chaotic-aur repository by modifying /etc/pacman.conf.\n"
-                     "You will be prompted for administrator privileges.\n\n"
+            message = "This will disable the chaotic-aur repository by modifying /etc/pacman.conf.\n\n"
                      "Do you want to continue?";
         }
         
@@ -817,13 +826,16 @@ void SettingsWidget::onApplyClicked() {
         // Suggest database sync
             auto reply = QMessageBox::question(this, "Sync Package Database",
                                               "Would you like to sync the package database now?\n"
-                                              "(This will run 'pkexec pacman -Sy')",
+                                              "(This will run 'pacman -Sy')",
                                               QMessageBox::Yes | QMessageBox::No);
-            
+
             if (reply == QMessageBox::Yes) {
                 QProcess process;
                 m_statusLabel->setText("Syncing package databases...");
-                process.start("pkexec", QStringList() << "pacman" << "-Sy");
+                process.start("sudo", QStringList() << "-S" << "pacman" << "-Sy");
+                if (process.waitForStarted(3000)) {
+                    AuthManager::instance().writePasswordToProcess(&process);
+                }
                 process.waitForFinished(60000); // 60 second timeout
                 
                 if (process.exitCode() == 0) {
@@ -833,7 +845,7 @@ void SettingsWidget::onApplyClicked() {
                     // Refresh ALPM databases to pick up the new repository
                     AlpmWrapper::instance().refreshDatabases();
                 } else {
-                    m_statusLabel->setText("Failed to sync package databases. Please run 'sudo pacman -Sy' manually.");
+                    m_statusLabel->setText("Failed to sync package databases. Please run 'pacman -Sy' manually as root.");
                     m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
                 }
             } else {
@@ -893,9 +905,12 @@ void SettingsWidget::onRemoveLockClicked() {
     int ret = msgBox.exec();
     
     if (ret == QMessageBox::Yes && confirmCheckbox->isChecked()) {
-        // Use pkexec to remove the lock file with elevated privileges
+        // Use sudo to remove the lock file with elevated privileges
         QProcess process;
-        process.start("pkexec", QStringList() << "rm" << "-f" << lockFilePath);
+        process.start("sudo", QStringList() << "-S" << "rm" << "-f" << lockFilePath);
+        if (process.waitForStarted(3000)) {
+            AuthManager::instance().writePasswordToProcess(&process);
+        }
         process.waitForFinished(30000); // 30 second timeout
         
         if (process.exitCode() == 0) {
@@ -933,7 +948,7 @@ void SettingsWidget::onSetupChaoticClicked() {
         "1. Download chaotic-keyring and chaotic-mirrorlist packages\n"
         "2. Install them using pacman\n"
         "3. Add the repository to /etc/pacman.conf\n\n"
-        "This requires internet connection and administrator privileges.");
+        "This requires an internet connection.");
     msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     msgBox.setDefaultButton(QMessageBox::Yes);
     
@@ -998,8 +1013,7 @@ void SettingsWidget::onSetupChaoticClicked() {
             QString errorDetails = "Possible reasons:\n"
                                   "• No internet connection\n"
                                   "• Download failed\n"
-                                  "• Installation cancelled\n"
-                                  "• User denied authentication\n\n";
+                                  "• Installation cancelled\n\n";
             
             if (!output.isEmpty() && output.length() < 500) {
                 errorDetails += "Error output:\n" + output;
@@ -1010,7 +1024,10 @@ void SettingsWidget::onSetupChaoticClicked() {
         }
     });
     
-    process->start("pkexec", QStringList() << "bash" << "-c" << script);
+    process->start("sudo", QStringList() << "-S" << "bash" << "-c" << script);
+    if (process->waitForStarted(3000)) {
+        AuthManager::instance().writePasswordToProcess(process);
+    }
 }
 
 void SettingsWidget::onRemoveChaoticClicked() {
@@ -1068,8 +1085,11 @@ void SettingsWidget::onRemoveChaoticClicked() {
         }
     });
     
-    process->start("pkexec", QStringList() << "pacman" << "-Rns" << "--noconfirm" 
+    process->start("sudo", QStringList() << "-S" << "pacman" << "-Rns" << "--noconfirm"
                    << "chaotic-keyring" << "chaotic-mirrorlist");
+    if (process->waitForStarted(3000)) {
+        AuthManager::instance().writePasswordToProcess(process);
+    }
 }
 
 void SettingsWidget::onSyncReposClicked() {
@@ -1094,13 +1114,13 @@ void SettingsWidget::onSyncReposClicked() {
     m_statusLabel->show();
     m_syncReposButton->setEnabled(false);
     
-    // Run pacman -Sy with pkexec
+    // Run pacman -Sy with sudo
     QProcess* process = new QProcess(this);
     connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, [this, process](int exitCode, QProcess::ExitStatus exitStatus) {
         process->deleteLater();
         m_syncReposButton->setEnabled(true);
-        
+
         if (exitCode == 0 && exitStatus == QProcess::NormalExit) {
             m_statusLabel->setText("Repositories synchronized successfully!");
             m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
@@ -1125,7 +1145,10 @@ void SettingsWidget::onSyncReposClicked() {
         }
     });
     
-    process->start("pkexec", QStringList() << "pacman" << "-Sy");
+    process->start("sudo", QStringList() << "-S" << "pacman" << "-Sy");
+    if (process->waitForStarted(3000)) {
+        AuthManager::instance().writePasswordToProcess(process);
+    }
 }
 
 void SettingsWidget::onCancelProcessClicked() {
