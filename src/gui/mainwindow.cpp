@@ -129,9 +129,9 @@ void MainWindow::createMenuBar() {
         QMessageBox::about(this, "About ALG App Store",
             "ALG App Store (Beta)\n\n"
             "A modern package manager for Arch Linux\n"
-            "Version: 0.2.28\n"
+            "Version: " APP_VERSION "\n"
             "Built with Qt6 and C++17\n\n"
-            "© 2025 Arka Linux GUI");
+            "© 2024-2026 Arka Linux GUI");
     });
     helpMenu->addAction(aboutAction);
 }

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(alg-app-store VERSION 0.2.28 LANGUAGES CXX)
+project(alg-app-store VERSION 0.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -88,6 +88,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 
 # Link directories
 link_directories(${ALPM_LIBRARY_DIRS})
+
+# Add version definition
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    APP_VERSION="${PROJECT_VERSION}"
+)
 
 # Compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE
