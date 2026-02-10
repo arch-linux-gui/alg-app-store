@@ -6,6 +6,7 @@
 #include "settings_widget.h"
 #include "../utils/logger.h"
 #include "../core/alpm_wrapper.h"
+#include "../core/auth_manager.h"
 #include <QMenuBar>
 #include <QMenu>
 #include <QAction>
@@ -19,9 +20,20 @@ MainWindow::MainWindow(QWidget* parent)
     
     // Initialize ALPM before creating widgets that might need it
     if (!AlpmWrapper::instance().initialize()) {
-        QMessageBox::critical(this, "Error", 
+        QMessageBox::critical(this, "Error",
             "Failed to initialize package manager. Please check your system configuration.");
         Logger::error("Failed to initialize ALPM in MainWindow");
+    }
+
+    // Authenticate once at startup for all privileged operations
+    if (!AuthManager::instance().authenticate(this)) {
+        Logger::error("Authentication failed or cancelled");
+        QMessageBox::critical(this, "Authentication Required",
+            "This application requires administrator privileges to manage packages.\n"
+            "The application will now exit.");
+        // Schedule exit after event loop starts
+        QMetaObject::invokeMethod(qApp, &QApplication::quit, Qt::QueuedConnection);
+        return;
     }
     
     setupUi();
