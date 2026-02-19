@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.arkalinuxgui.AppStore
+Exec=/usr/bin/alg-app-store-daemon
+User=root
