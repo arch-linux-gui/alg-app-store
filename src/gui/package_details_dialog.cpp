@@ -236,16 +236,16 @@ void PackageDetailsDialog::setupUi() {
         auto* yayButton = new QPushButton("yay", this);
         yayButton->setCheckable(true);
         yayButton->setChecked(true);
-        yayButton->setStyleSheet("QPushButton { background-color: #27272a; color: #fafafa; "
-                                "border: none; border-radius: 4px; padding: 6px 16px; }"
-                                "QPushButton:checked { background-color: #3b82f6; }");
-        
+        yayButton->setStyleSheet("QPushButton { background-color: #27272a; color: #fafafa; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px 16px; }"
+                        "QPushButton:checked { background-color: #52525b; border: 1px solid #71717a; font-weight: bold; }"
+                        "QPushButton:hover { background-color: #3f3f46; }");        
+
         auto* paruButton = new QPushButton("paru", this);
         paruButton->setCheckable(true);
-        paruButton->setStyleSheet("QPushButton { background-color: #27272a; color: #fafafa; "
-                                 "border: none; border-radius: 4px; padding: 6px 16px; }"
-                                 "QPushButton:checked { background-color: #3b82f6; }");
-        
+        paruButton->setStyleSheet("QPushButton { background-color: #27272a; color: #fafafa; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px 16px; }"
+                         "QPushButton:checked { background-color: #52525b; border: 1px solid #71717a; font-weight: bold; }"
+                         "QPushButton:hover { background-color: #3f3f46; }"); 
+
         buttonLayout->addWidget(yayButton);
         buttonLayout->addWidget(paruButton);
         buttonLayout->addStretch();
@@ -255,9 +255,9 @@ void PackageDetailsDialog::setupUi() {
         command = QString("yay -S %1").arg(m_info.name);
         auto* commandText = new QLabel(this);
         commandText->setText(command);
-        commandText->setStyleSheet("background-color: #27272a; color: #fafafa; "
-                                  "border-radius: 6px; padding: 12px; font-family: monospace; font-size: 13px;");
-        commandText->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        commandText->setStyleSheet("background-color: #121212; color: #e2e8f0; border: 1px solid #27272a; "
+                                   "border-radius: 6px; padding: 12px; font-family: monospace; font-size: 13px;");   
+	      commandText->setTextInteractionFlags(Qt::TextSelectableByMouse);
         commandLayout->addWidget(commandText);
         
         // Connect buttons to update command
@@ -278,9 +278,8 @@ void PackageDetailsDialog::setupUi() {
         auto* pacmanButton = new QPushButton("pacman", this);
         pacmanButton->setCheckable(true);
         pacmanButton->setChecked(true);
-        pacmanButton->setStyleSheet("QPushButton { background-color: #3b82f6; color: #fafafa; "
-                                   "border: none; border-radius: 4px; padding: 6px 16px; }");
-        commandLayout->addWidget(pacmanButton, 0, Qt::AlignLeft);
+        pacmanButton->setStyleSheet("QPushButton { background-color: #52525b; color: #fafafa; border: 1px solid #71717a; "
+                           "border-radius: 4px; padding: 6px 16px; font-weight: bold; }"); commandLayout->addWidget(pacmanButton, 0, Qt::AlignLeft);
         
         command = QString("sudo pacman -S %1").arg(m_info.name);
         auto* commandText = new QLabel(command, this);
