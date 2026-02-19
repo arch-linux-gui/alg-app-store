@@ -77,6 +77,9 @@ void MainWindow::setupUi() {
         m_settingsWidget->isChaoticAurEnabled()
     );
     
+	  //m_tabWidget->setDocumentMode(true);
+	  //m_tabWidget->tabBar()->setExpanding(true);
+
     m_tabWidget->setTabPosition(QTabWidget::North);
     m_tabWidget->setMovable(false);
     
@@ -125,24 +128,31 @@ void MainWindow::createMenuBar() {
 }
 
 void MainWindow::loadStyleSheet() {
-    QFile styleFile(":/stylesheet.qss");
+    QStringList styleFiles = {
+        ":/resource/styles/base.qss",
+        ":/resource/styles/navigation.qss",
+        ":/resource/styles/components.qss",
+        ":/resource/styles/containers.qss"
+    };
+
+    QString combinedStyleSheet;
+    bool anyLoaded = false; 
     
-    if (!styleFile.exists()) {
-        // Try loading from current directory (for development)
-        styleFile.setFileName("stylesheet.qss");
+    for (const QString &path : styleFiles) {
+        QFile file(path);
+        if (file.open(QFile::ReadOnly | QFile::Text)) {
+            combinedStyleSheet += QLatin1String(file.readAll());
+            file.close();
+            anyLoaded = true;
+        } else {
+            Logger::warning(QString("Could not load style module: %1").arg(path));
+        }
     }
-    
-    if (!styleFile.exists()) {
-        // Try loading from system installation path
-        styleFile.setFileName("/usr/share/alg-app-store/stylesheet.qss");
-    }
-    
-    if (styleFile.open(QFile::ReadOnly)) {
-        QString styleSheet = QLatin1String(styleFile.readAll());
-        qApp->setStyleSheet(styleSheet);
-        styleFile.close();
-        Logger::info(QString("Stylesheet loaded successfully from: %1").arg(styleFile.fileName()));
+
+    if (anyLoaded) {
+        qApp->setStyleSheet(combinedStyleSheet);
+        Logger::info("Modular stylesheets loaded and combined successfully from resources.");
     } else {
-        Logger::warning("Could not load stylesheet");
+        Logger::error("Failed to load any stylesheet modules from resources!");
     }
 }
