@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+  "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+  "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Arka Linux GUI</vendor>
+  <vendor_url>https://archlinuxgui.in/</vendor_url>
+  <icon_name>system-software-install</icon_name>
+
+  <action id="org.arkalinuxgui.appstore.manage-packages">
+    <description>Manage software packages</description>
+    <message>Authentication is required to install, remove, or update software</message>
+    <defaults>
+      <allow_any>auth_admin_keep</allow_any>
+      <allow_inactive>auth_admin_keep</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.arkalinuxgui.appstore.manage-config">
+    <description>Manage software repositories configuration</description>
+    <message>Authentication is required to modify software repositories</message>
+    <defaults>
+      <allow_any>auth_admin_keep</allow_any>
+      <allow_inactive>auth_admin_keep</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+</policyconfig>
