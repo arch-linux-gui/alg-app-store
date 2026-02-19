@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(alg-app-store VERSION 0.2.28 LANGUAGES CXX)
+project(alg-app-store VERSION 0.4.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,6 +20,9 @@ find_package(Qt6 REQUIRED COMPONENTS
 # Find libalpm
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(ALPM REQUIRED libalpm)
+
+# Find spdlog
+find_package(spdlog REQUIRED)
 
 # Include directories
 include_directories(
@@ -82,6 +85,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Network
     Qt6::Concurrent
     ${ALPM_LIBRARIES}
+    spdlog::spdlog
 )
 
 # Link directories
