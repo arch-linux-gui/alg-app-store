@@ -1,0 +1,21 @@
+* {
+    font-family: "Inter", "Cantarell", "Segoe UI", "Roboto", sans-serif;
+    color: #ffffff;
+}
+
+QMainWindow, QDialog, QWidget {
+    background-color: #1e1e1e; 
+}
+
+QToolTip {
+    background-color: #242424;
+    color: #e0e0e0;           
+    border: 1px solid #454545;
+    border-radius: 6px;
+    padding: 6px;
+}
+
+QToolTip QLabel {
+    background-color: transparent;
+    color: #e0e0e0;
+}

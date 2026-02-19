@@ -1,0 +1,48 @@
+QPushButton {
+    background-color: #353535;
+    color: #ffffff;
+    border: 1px solid #404040;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 500;
+}
+
+QPushButton:hover { background-color: #3d3d3d; border: 1px solid #4a4a4a; }
+QPushButton:pressed { background-color: #242424; }
+QPushButton:disabled { background-color: #242424; color: #5e5c64; border: 1px solid #303030; }
+
+QLineEdit {
+    background-color: #2d2d2d;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+QLineEdit:focus { border: 2px solid #888888; }
+
+QComboBox {
+    background-color: #353535;
+    color: #ffffff;
+    border: 1px solid #404040;
+    border-radius: 8px;
+    padding: 5px 10px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #242424;
+    color: #ffffff;
+    border: 1px solid #404040;
+    selection-background-color: #3e3e3e;
+    outline: none;
+}
+
+QScrollBar:vertical {
+    background-color: transparent;
+    width: 10px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #5e5c64;
+    border-radius: 5px;
+    margin: 4px 2px;
+}
