@@ -4,6 +4,7 @@
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QStyle>
+#include <QStyleOption>
 
 PackageCard::PackageCard(const PackageInfo& info, QWidget* parent)
     : QWidget(parent)
@@ -108,4 +109,11 @@ void PackageCard::leaveEvent(QEvent* event) {
     style()->unpolish(this);
     style()->polish(this);
     QWidget::leaveEvent(event);
+}
+
+void PackageCard::paintEvent(QPaintEvent*) {
+    QStyleOption opt;
+    opt.initFrom(this);
+    QPainter p(this);
+    style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }
