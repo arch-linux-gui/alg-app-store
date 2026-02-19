@@ -77,8 +77,8 @@ void MainWindow::setupUi() {
         m_settingsWidget->isChaoticAurEnabled()
     );
     
-	  //m_tabWidget->setDocumentMode(true);
-	  //m_tabWidget->tabBar()->setExpanding(true);
+	  m_tabWidget->setDocumentMode(true);
+	  m_tabWidget->tabBar()->setExpanding(true);
 
     m_tabWidget->setTabPosition(QTabWidget::North);
     m_tabWidget->setMovable(false);
