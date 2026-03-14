@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include <QTextCursor>
 #include <QtConcurrent>
+#include <QStyle>
 
 class UpdateItem : public QWidget {
     Q_OBJECT
@@ -30,20 +31,20 @@ public:
         
         auto* versionLabel = new QLabel(
             QString("%1 → %2").arg(m_info.oldVersion, m_info.newVersion), this);
-        versionLabel->setStyleSheet("color: #888;");
-        infoLayout->addWidget(versionLabel);
+        versionLabel->setProperty("class", "secondary-text");
+	      infoLayout->addWidget(versionLabel);
         
         auto* repoLabel = new QLabel(m_info.repository, this);
-        repoLabel->setStyleSheet("color: #666; font-size: 10px;");
-        infoLayout->addWidget(repoLabel);
+        repoLabel->setProperty("class", "dim-text");
+	      infoLayout->addWidget(repoLabel);
         
         layout->addLayout(infoLayout);
         layout->addStretch();
         
         if (m_info.downloadSize > 0) {
             auto* sizeLabel = new QLabel(formatSize(m_info.downloadSize), this);
-            sizeLabel->setStyleSheet("color: #888;");
-            layout->addWidget(sizeLabel);
+            sizeLabel->setProperty("class", "secondary-text");
+		        layout->addWidget(sizeLabel);
         }
         
         auto* updateButton = new QPushButton("Update", this);
@@ -117,15 +118,14 @@ void UpdatesWidget::setupUi() {
     
     auto* titleLabel = new QLabel("Available Updates", this);
     auto titleFont = titleLabel->font();
-    titleFont.setPointSize(24);
-    titleFont.setBold(true);
-    titleLabel->setFont(titleFont);
+    titleLabel->setObjectName("view-title");
+	  titleLabel->setFont(titleFont);
     headerLayout->addWidget(titleLabel);
     
     headerLayout->addStretch();
     
-    m_countLabel->setStyleSheet("font-size: 14px; color: #888;");
-    headerLayout->addWidget(m_countLabel);
+    m_countLabel->setProperty("class", "secondary-text");
+	  headerLayout->addWidget(m_countLabel);
     
     m_checkButton->setMinimumHeight(35);
     connect(m_checkButton, &QPushButton::clicked, this, &UpdatesWidget::checkForUpdates);
@@ -165,48 +165,23 @@ void UpdatesWidget::setupUi() {
     
     // Progress bar section (hidden by default)
     auto* progressLayout = new QVBoxLayout(m_progressWidget);
-    progressLayout->setContentsMargins(20, 0, 20, 20);
+	  progressLayout->setContentsMargins(20, 0, 20, 20);
     progressLayout->setSpacing(8);
     
-    m_progressLabel->setStyleSheet("color: #a1a1aa; font-size: 12px;");
-    m_progressLabel->setAlignment(Qt::AlignCenter);
+    m_progressLabel->setProperty("class", "dim-text");
+	  m_progressLabel->setAlignment(Qt::AlignCenter);
     progressLayout->addWidget(m_progressLabel);
     
     m_progressBar->setMinimumHeight(20);
     m_progressBar->setMaximumHeight(20);
     m_progressBar->setTextVisible(true);
     m_progressBar->setFormat("%p%");
-    m_progressBar->setStyleSheet(
-        "QProgressBar {"
-        "    border: none;"
-        "    border-radius: 4px;"
-        "    background-color: #27272a;"
-        "    color: #fafafa;"
-        "    text-align: center;"
-        "    font-size: 11px;"
-        "}"
-        "QProgressBar::chunk {"
-        "    border-radius: 4px;"
-        "    background-color: #3b82f6;"
-        "}"
-    );
-    progressLayout->addWidget(m_progressBar);
+    m_progressBar->setObjectName("operation-progress");
+	  progressLayout->addWidget(m_progressBar);
     
     // Toggle log button
-    m_toggleLogButton->setStyleSheet(
-        "QPushButton {"
-        "    background: none;"
-        "    border: none;"
-        "    color: #3b82f6;"
-        "    text-decoration: underline;"
-        "    font-size: 11px;"
-        "    padding: 4px;"
-        "}"
-        "QPushButton:hover {"
-        "    color: #60a5fa;"
-        "}"
-    );
-    connect(m_toggleLogButton, &QPushButton::clicked, this, &UpdatesWidget::toggleLogViewer);
+    m_toggleLogButton->setProperty("class", "link-button");
+	  connect(m_toggleLogButton, &QPushButton::clicked, this, &UpdatesWidget::toggleLogViewer);
     progressLayout->addWidget(m_toggleLogButton, 0, Qt::AlignCenter);
     
     m_progressWidget->hide();
@@ -219,17 +194,7 @@ void UpdatesWidget::setupUi() {
     
     m_logViewer->setReadOnly(true);
     m_logViewer->setMaximumHeight(200);
-    m_logViewer->setStyleSheet(
-        "QTextEdit {"
-        "    background-color: #18181b;"
-        "    border: 1px solid #27272a;"
-        "    border-radius: 6px;"
-        "    color: #d4d4d8;"
-        "    font-family: 'Consolas', 'Monaco', monospace;"
-        "    font-size: 11px;"
-        "    padding: 8px;"
-        "}"
-    );
+    m_logViewer->setObjectName("log-viewer"); 
     logLayout->addWidget(m_logViewer);
     
     m_logWidget->hide();

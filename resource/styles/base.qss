@@ -3,6 +3,13 @@
     color: #ffffff;
 }
 
+#view-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
 QMainWindow, QDialog, QWidget {
     background-color: #1e1e1e; 
 }

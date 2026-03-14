@@ -18,6 +18,10 @@
 #include <QDir>
 #include <QProcess>
 #include <QFileInfo>
+#include <QLabel>
+#include <QPushButton>
+#include <QProgressBar>
+#include <QTextEdit>
 
 PackageDetailsDialog::PackageDetailsDialog(const PackageInfo& info, QWidget* parent)
     : QDialog(parent)
@@ -83,29 +87,19 @@ void PackageDetailsDialog::setupUi() {
     
     // Header with name and repository badge
     auto* headerLayout = new QHBoxLayout();
-    
     m_nameLabel->setText(m_info.name);
-    m_nameLabel->setContentsMargins(0, 0, 0, 0);
-    auto nameFont = m_nameLabel->font();
-    nameFont.setPointSize(20);
-    nameFont.setBold(true);
-    m_nameLabel->setFont(nameFont);
+	  m_nameLabel->setObjectName("details-title");
     headerLayout->addWidget(m_nameLabel);
-    
     headerLayout->addStretch();
     
     // Repository badge (member so we can update it later)
     m_repositoryLabel->setText(m_info.repository);
     m_repositoryLabel->setProperty("class", "repo-badge");
-    m_repositoryLabel->setStyleSheet("background-color: #27272a; color: #a1a1aa; "
-                                   "border-radius: 4px; padding: 6px 12px; font-size: 12px;");
     headerLayout->addWidget(m_repositoryLabel);
 
     // Installed status badge (hidden by default)
     m_statusBadge->setText("Installed");
     m_statusBadge->setProperty("class", "status-badge");
-    m_statusBadge->setStyleSheet("background-color: #16a34a; color: #ffffff; "
-                                 "border-radius: 4px; padding: 6px 10px; font-size: 12px;");
     m_statusBadge->hide();
     headerLayout->addWidget(m_statusBadge);
     
@@ -113,19 +107,19 @@ void PackageDetailsDialog::setupUi() {
     
     // Description right under the name
     auto* descLabel = new QLabel(m_info.description, this);
+	  descLabel->setObjectName("details-desc");
     descLabel->setWordWrap(true);
-    descLabel->setStyleSheet("color: #a1a1aa; font-size: 13px;");
     mainLayout->addWidget(descLabel);
     
     // Separator line
     auto* line1 = new QFrame(this);
     line1->setFrameShape(QFrame::HLine);
-    line1->setStyleSheet("background-color: #27272a;");
+    line1->setObjectName("details-separator");
     mainLayout->addWidget(line1);
     
     // Package Details section - 2x2 grid layout
     auto* detailsTitle = new QLabel("Package Details", this);
-    detailsTitle->setStyleSheet("font-size: 16px; font-weight: bold;");
+    detailsTitle->setObjectName("section-header");
     mainLayout->addWidget(detailsTitle);
     
     auto* infoWidget = new QWidget(this);
@@ -137,18 +131,18 @@ void PackageDetailsDialog::setupUi() {
     
     // Version (top-left)
     auto* versionTitle = new QLabel("Version", this);
-    versionTitle->setStyleSheet("color: #a1a1aa; font-size: 12px;");
+    versionTitle->setProperty("class", "detail-label");
     m_versionLabel->setText(m_info.version);
-    m_versionLabel->setStyleSheet("font-size: 13px;");
+    m_versionLabel->setProperty("class", "detail-value");
     infoGrid->addWidget(versionTitle, 0, 0, Qt::AlignTop);
     infoGrid->addWidget(m_versionLabel, 0, 1);
     
     // Maintainer (top-right)
     if (!m_info.maintainer.isEmpty()) {
         auto* maintainerTitle = new QLabel("Maintainer", this);
-        maintainerTitle->setStyleSheet("color: #a1a1aa; font-size: 12px;");
+        maintainerTitle->setProperty("class", "detail-label");
         m_maintainerLabel->setText(m_info.maintainer);
-        m_maintainerLabel->setStyleSheet("font-size: 13px;");
+        m_maintainerLabel->setProperty("class", "detail-value");
         infoGrid->addWidget(maintainerTitle, 0, 2, Qt::AlignTop);
         infoGrid->addWidget(m_maintainerLabel, 0, 3);
     }
@@ -156,13 +150,13 @@ void PackageDetailsDialog::setupUi() {
     // Upstream URL (bottom-left)
     if (!m_info.upstreamUrl.isEmpty()) {
         auto* urlTitle = new QLabel("Upstream URL", this);
-        urlTitle->setStyleSheet("color: #a1a1aa; font-size: 12px;");
-        m_urlLabel->setText(QString("<a href='%1' style='color: #3b82f6;'>%1</a>")
+        urlTitle->setProperty("class", "detail-label");
+		    m_urlLabel->setText(QString("<a href='%1' style='color: #3b82f6;'>%1</a>")
                            .arg(m_info.upstreamUrl));
         m_urlLabel->setOpenExternalLinks(true);
         m_urlLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
         m_urlLabel->setWordWrap(true);
-        m_urlLabel->setStyleSheet("font-size: 13px;");
+        m_urlLabel->setProperty("class", "detail-value");
         infoGrid->addWidget(urlTitle, 1, 0, Qt::AlignTop);
         infoGrid->addWidget(m_urlLabel, 1, 1);
     }
@@ -170,9 +164,9 @@ void PackageDetailsDialog::setupUi() {
     // Last Updated (bottom-right)
     if (!m_info.lastUpdated.isNull()) {
         auto* updatedTitle = new QLabel("Last Updated", this);
-        updatedTitle->setStyleSheet("color: #a1a1aa; font-size: 12px;");
+        updatedTitle->setProperty("class", "detail-label");
         m_lastUpdatedLabel->setText(m_info.lastUpdated.toString("MMM. d, yyyy, h a"));
-        m_lastUpdatedLabel->setStyleSheet("font-size: 13px;");
+        m_lastUpdatedLabel->setProperty("class", "detail-value");
         infoGrid->addWidget(updatedTitle, 1, 2, Qt::AlignTop);
         infoGrid->addWidget(m_lastUpdatedLabel, 1, 3);
     }
@@ -182,20 +176,19 @@ void PackageDetailsDialog::setupUi() {
     // Separator line
     auto* line2 = new QFrame(this);
     line2->setFrameShape(QFrame::HLine);
-    line2->setStyleSheet("background-color: #27272a;");
+    line2->setObjectName("details-separator");
     mainLayout->addWidget(line2);
     
     // Dependencies section
     if (!m_info.dependList.isEmpty()) {
         auto* depsTitle = new QLabel("Dependencies", this);
-        depsTitle->setStyleSheet("font-size: 16px; font-weight: bold;");
+        depsTitle->setObjectName("section-header");
         mainLayout->addWidget(depsTitle);
         
         m_dependenciesText->setPlainText(m_info.dependList.join("\n"));
         m_dependenciesText->setReadOnly(true);
         m_dependenciesText->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        m_dependenciesText->setStyleSheet("background-color: #18181b; border: 1px solid #27272a; "
-                                         "border-radius: 6px; padding: 8px; font-size: 12px;");
+		    m_dependenciesText->setObjectName("details-text-area");
         
         // Adjust height to fit all dependencies without scrolling
         QFontMetrics fm(m_dependenciesText->font());
@@ -210,13 +203,13 @@ void PackageDetailsDialog::setupUi() {
         // Separator line
         auto* line3 = new QFrame(this);
         line3->setFrameShape(QFrame::HLine);
-        line3->setStyleSheet("background-color: #27272a;");
-        mainLayout->addWidget(line3);
+        line3->setObjectName("details-separator");
+		    mainLayout->addWidget(line3);
     }
     
     // Command section
     auto* commandTitle = new QLabel("Command", this);
-    commandTitle->setStyleSheet("font-size: 16px; font-weight: bold;");
+    commandTitle->setObjectName("section-header");
     mainLayout->addWidget(commandTitle);
     
     // Command buttons and text
@@ -236,15 +229,11 @@ void PackageDetailsDialog::setupUi() {
         auto* yayButton = new QPushButton("yay", this);
         yayButton->setCheckable(true);
         yayButton->setChecked(true);
-        yayButton->setStyleSheet("QPushButton { background-color: #27272a; color: #fafafa; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px 16px; }"
-                        "QPushButton:checked { background-color: #52525b; border: 1px solid #71717a; font-weight: bold; }"
-                        "QPushButton:hover { background-color: #3f3f46; }");        
+        yayButton->setProperty("class", "command-selector-btn");
 
         auto* paruButton = new QPushButton("paru", this);
         paruButton->setCheckable(true);
-        paruButton->setStyleSheet("QPushButton { background-color: #27272a; color: #fafafa; border: 1px solid #3f3f46; border-radius: 4px; padding: 6px 16px; }"
-                         "QPushButton:checked { background-color: #52525b; border: 1px solid #71717a; font-weight: bold; }"
-                         "QPushButton:hover { background-color: #3f3f46; }"); 
+        paruButton->setProperty("class", "command-selector-btn");
 
         buttonLayout->addWidget(yayButton);
         buttonLayout->addWidget(paruButton);
@@ -255,9 +244,8 @@ void PackageDetailsDialog::setupUi() {
         command = QString("yay -S %1").arg(m_info.name);
         auto* commandText = new QLabel(this);
         commandText->setText(command);
-        commandText->setStyleSheet("background-color: #121212; color: #e2e8f0; border: 1px solid #27272a; "
-                                   "border-radius: 6px; padding: 12px; font-family: monospace; font-size: 13px;");   
-	      commandText->setTextInteractionFlags(Qt::TextSelectableByMouse);
+	      commandText->setObjectName("command-display");
+		    commandText->setTextInteractionFlags(Qt::TextSelectableByMouse);
         commandLayout->addWidget(commandText);
         
         // Connect buttons to update command
@@ -278,21 +266,19 @@ void PackageDetailsDialog::setupUi() {
         auto* pacmanButton = new QPushButton("pacman", this);
         pacmanButton->setCheckable(true);
         pacmanButton->setChecked(true);
-        pacmanButton->setStyleSheet("QPushButton { background-color: #52525b; color: #fafafa; border: 1px solid #71717a; "
-                           "border-radius: 4px; padding: 6px 16px; font-weight: bold; }"); commandLayout->addWidget(pacmanButton, 0, Qt::AlignLeft);
-        
+        pacmanButton->setProperty("class", "command-selector-btn"); 
+
         command = QString("sudo pacman -S %1").arg(m_info.name);
         auto* commandText = new QLabel(command, this);
-        commandText->setStyleSheet("background-color: #27272a; color: #fafafa; "
-                                  "border-radius: 6px; padding: 12px; font-family: monospace; font-size: 13px;");
-        commandText->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        commandText->setObjectName("command-display");
+		    commandText->setTextInteractionFlags(Qt::TextSelectableByMouse);
         commandLayout->addWidget(commandText);
     }
     
     mainLayout->addWidget(commandWidget);
     
     auto* noteLabel = new QLabel("Please ensure your system meets the minimum requirements before installation.", contentWidget);
-    noteLabel->setStyleSheet("color: #71717a; font-size: 11px; font-style: italic;");
+    noteLabel->setProperty("class", "footer-note");
     noteLabel->setWordWrap(true);
     mainLayout->addWidget(noteLabel);
     
@@ -336,45 +322,20 @@ void PackageDetailsDialog::setupUi() {
     progressLayout->setContentsMargins(20, 0, 20, 20);
     progressLayout->setSpacing(8);
     
-    m_progressLabel->setStyleSheet("color: #a1a1aa; font-size: 12px;");
-    m_progressLabel->setAlignment(Qt::AlignCenter);
+    m_progressLabel->setProperty("class", "detail-label");
+	  m_progressLabel->setAlignment(Qt::AlignCenter);
     progressLayout->addWidget(m_progressLabel);
     
     m_progressBar->setMinimumHeight(20);
     m_progressBar->setMaximumHeight(20);
     m_progressBar->setTextVisible(true);
     m_progressBar->setFormat("%p%");
-    m_progressBar->setStyleSheet(
-        "QProgressBar {"
-        "    border: none;"
-        "    border-radius: 4px;"
-        "    background-color: #27272a;"
-        "    color: #fafafa;"
-        "    text-align: center;"
-        "    font-size: 11px;"
-        "}"
-        "QProgressBar::chunk {"
-        "    border-radius: 4px;"
-        "    background-color: #3b82f6;"
-        "}"
-    );
-    progressLayout->addWidget(m_progressBar);
+    m_progressBar->setObjectName("details-progress"); 
+	  progressLayout->addWidget(m_progressBar);
     
     // Toggle log button
-    m_toggleLogButton->setStyleSheet(
-        "QPushButton {"
-        "    background: none;"
-        "    border: none;"
-        "    color: #3b82f6;"
-        "    text-decoration: underline;"
-        "    font-size: 11px;"
-        "    padding: 4px;"
-        "}"
-        "QPushButton:hover {"
-        "    color: #60a5fa;"
-        "}"
-    );
-    connect(m_toggleLogButton, &QPushButton::clicked, this, &PackageDetailsDialog::toggleLogViewer);
+    m_toggleLogButton->setProperty("class", "link-button");
+	  connect(m_toggleLogButton, &QPushButton::clicked, this, &PackageDetailsDialog::toggleLogViewer);
     progressLayout->addWidget(m_toggleLogButton, 0, Qt::AlignCenter);
     
     m_progressWidget->hide();
@@ -387,18 +348,8 @@ void PackageDetailsDialog::setupUi() {
     
     m_logViewer->setReadOnly(true);
     m_logViewer->setMaximumHeight(200);
-    m_logViewer->setStyleSheet(
-        "QTextEdit {"
-        "    background-color: #18181b;"
-        "    border: 1px solid #27272a;"
-        "    border-radius: 6px;"
-        "    padding: 8px;"
-        "    font-family: monospace;"
-        "    font-size: 11px;"
-        "    color: #a1a1aa;"
-        "}"
-    );
-    logLayout->addWidget(m_logViewer);
+    m_logViewer->setObjectName("log-viewer");
+	  logLayout->addWidget(m_logViewer);
     
     m_logWidget->hide();
     dialogLayout->addWidget(m_logWidget, 0);
