@@ -263,10 +263,17 @@ void PackageDetailsDialog::setupUi() {
         
     } else {
         // Show pacman for official repos
+		    auto* buttonLayout = new QHBoxLayout();
+
         auto* pacmanButton = new QPushButton("pacman", this);
         pacmanButton->setCheckable(true);
         pacmanButton->setChecked(true);
         pacmanButton->setProperty("class", "command-selector-btn"); 
+
+		    buttonLayout->addWidget(pacmanButton);
+		    buttonLayout->addStretch();
+
+		    commandLayout->addLayout(buttonLayout);
 
         command = QString("sudo pacman -S %1").arg(m_info.name);
         auto* commandText = new QLabel(command, this);

@@ -1192,7 +1192,7 @@ void SettingsWidget::onCancelProcessClicked() {
     m_statusLabel->setProperty("class", "status-msg-success");
     m_statusLabel->style()->unpolish(m_statusLabel);
     m_statusLabel->style()->polish(m_statusLabel);
-    m_statusLabel->show() 
+    m_statusLabel->show();
 
     Logger::info("User cancelled running package operation from settings");
     
