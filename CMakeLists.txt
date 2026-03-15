@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(alg-app-store VERSION 0.2.28 LANGUAGES CXX)
+project(alg-app-store VERSION 0.2.30 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
