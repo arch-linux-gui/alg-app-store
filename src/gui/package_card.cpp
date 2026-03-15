@@ -4,6 +4,9 @@
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QStyle>
+#include <QStyleOption>
+#include <QPainter>
+#include <QLabel>
 
 PackageCard::PackageCard(const PackageInfo& info, QWidget* parent)
     : QWidget(parent)
@@ -34,12 +37,9 @@ void PackageCard::setupUi() {
     auto* headerLayout = new QHBoxLayout();
     
     m_nameLabel->setText(m_info.name);
-    m_nameLabel->setWordWrap(false);
+    m_nameLabel->setObjectName("card-name");
+	  m_nameLabel->setWordWrap(false);
     m_nameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    auto nameFont = m_nameLabel->font();
-    nameFont.setPointSize(14);
-    nameFont.setBold(true);
-    m_nameLabel->setFont(nameFont);
     headerLayout->addWidget(m_nameLabel, 1);
     
     m_statusLabel->setProperty("class", "status-badge");
@@ -50,7 +50,8 @@ void PackageCard::setupUi() {
     
     // Description - with word wrap and proper sizing
     m_descriptionLabel->setText(m_info.description);
-    m_descriptionLabel->setWordWrap(true);
+    m_descriptionLabel->setObjectName("card-description");
+	  m_descriptionLabel->setWordWrap(true);
     m_descriptionLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_descriptionLabel->setMinimumHeight(40);
     m_descriptionLabel->setMaximumHeight(70);
@@ -58,12 +59,9 @@ void PackageCard::setupUi() {
     
     // Version
     m_versionLabel->setText(QString("Version: %1").arg(m_info.version));
-    auto versionFont = m_versionLabel->font();
-    versionFont.setPointSize(9);
-    m_versionLabel->setFont(versionFont);
-    m_versionLabel->setStyleSheet("color: #888;");
-    mainLayout->addWidget(m_versionLabel, 0);
-    
+    m_versionLabel->setObjectName("card-version");
+    mainLayout->addWidget(m_versionLabel, 0);  
+
     // Repository badge
     m_repositoryLabel->setText(m_info.repository);
     m_repositoryLabel->setProperty("class", "repo-badge");
@@ -108,4 +106,11 @@ void PackageCard::leaveEvent(QEvent* event) {
     style()->unpolish(this);
     style()->polish(this);
     QWidget::leaveEvent(event);
+}
+
+void PackageCard::paintEvent(QPaintEvent*) {
+    QStyleOption opt;
+    opt.initFrom(this);
+    QPainter p(this);
+    style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(alg-app-store VERSION 0.2.28 LANGUAGES CXX)
+project(alg-app-store VERSION 0.2.30 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -72,6 +72,7 @@ set(HEADERS
 add_executable(${PROJECT_NAME}
     ${SOURCES}
     ${HEADERS}
+	  resources.qrc
 )
 
 # Link libraries
@@ -102,16 +103,4 @@ install(TARGETS ${PROJECT_NAME}
 # Install desktop file
 install(FILES assets/alg-app-store.desktop
     DESTINATION share/applications
-)
-
-# Copy stylesheet to build directory
-configure_file(
-    ${CMAKE_SOURCE_DIR}/stylesheet.qss
-    ${CMAKE_BINARY_DIR}/stylesheet.qss
-    COPYONLY
-)
-
-# Install stylesheet
-install(FILES stylesheet.qss
-    DESTINATION share/alg-app-store
 )

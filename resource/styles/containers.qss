@@ -1,0 +1,54 @@
+QWidget[class="package-card"] {
+    background-color: #262626;
+    border: 1px solid #333333;
+    border-radius: 12px;
+    margin: 4px;
+}
+
+QWidget[class="package-card"][hovered="true"] {
+    background-color: #303030;
+    border: 1px solid #454545;
+}
+
+QWidget[class="package-card"] QLabel {
+    background-color: transparent;
+    border: none;
+}
+
+QGroupBox {
+    background-color: #242424;
+    border: 1px solid #303030;
+    border-radius: 12px;
+    margin-top: 20px;
+    padding-top: 20px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 4px 12px;
+    color: #9a9996;
+}
+
+QGroupBox QLabel, QGroupBox, QGroupBox QRadioButton, QScrollArea QLabel {
+    background-color: transparent;
+}
+
+QLabel[class="status-badge"] {
+    background-color: #1a3a2a;
+    color: #4ade80;           
+    border: 1px solid #2d5a41;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+QLabel[class="repo-badge"] {
+    background-color: #353535;
+    color: #9a9996;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 600;
+}

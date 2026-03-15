@@ -7,6 +7,7 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QtConcurrent>
+#include <QStyle>
 
 InstalledWidget::InstalledWidget(QWidget* parent)
     : QWidget(parent)
@@ -28,17 +29,14 @@ void InstalledWidget::setupUi() {
     auto* headerLayout = new QHBoxLayout();
     
     auto* titleLabel = new QLabel("Installed Packages", this);
-    auto titleFont = titleLabel->font();
-    titleFont.setPointSize(24);
-    titleFont.setBold(true);
-    titleLabel->setFont(titleFont);
-    headerLayout->addWidget(titleLabel);
-    
+    titleLabel->setObjectName("view-title"); 
+    headerLayout->addWidget(titleLabel); 
     headerLayout->addStretch();
     
-    m_countLabel->setStyleSheet("font-size: 14px; color: #888;");
-    headerLayout->addWidget(m_countLabel);
-    
+    // Counter Label
+    m_countLabel->setObjectName("package-count-label"); 
+    headerLayout->addWidget(m_countLabel);    
+
     auto* refreshButton = new QPushButton("Refresh", this);
     connect(refreshButton, &QPushButton::clicked, this, &InstalledWidget::refreshPackages);
     headerLayout->addWidget(refreshButton);
@@ -54,7 +52,8 @@ void InstalledWidget::setupUi() {
     mainLayout->addWidget(m_filterInput);
     
     // Status label
-    m_statusLabel->setAlignment(Qt::AlignCenter);
+    m_statusLabel->setObjectName("status-message");
+	  m_statusLabel->setAlignment(Qt::AlignCenter);
     m_statusLabel->setText("Loading installed packages...");
     mainLayout->addWidget(m_statusLabel);
     

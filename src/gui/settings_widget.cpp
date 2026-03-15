@@ -9,6 +9,7 @@
 #include <QTextStream>
 #include <QProcess>
 #include <QScrollArea>
+#include <QStyle>
 #include <QWidget>
 
 SettingsWidget::SettingsWidget(QWidget* parent)
@@ -40,10 +41,7 @@ void SettingsWidget::setupUi() {
     
     // Title
     auto* titleLabel = new QLabel("Settings", contentWidget);
-    auto titleFont = titleLabel->font();
-    titleFont.setPointSize(24);
-    titleFont.setBold(true);
-    titleLabel->setFont(titleFont);
+	  titleLabel->setObjectName("view-title");
     mainLayout->addWidget(titleLabel);
     
     // Repository Settings
@@ -61,9 +59,9 @@ void SettingsWidget::setupUi() {
     // Status label
     m_statusLabel = new QLabel(contentWidget);
     m_statusLabel->setAlignment(Qt::AlignCenter);
-    m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
-    m_statusLabel->hide();
-    mainLayout->addWidget(m_statusLabel);
+    m_statusLabel->setProperty("class", "status-msg-info"); 
+    m_statusLabel->hide();    
+	  mainLayout->addWidget(m_statusLabel);
     
     // Add stretch at the bottom
     mainLayout->addStretch();
@@ -87,7 +85,7 @@ void SettingsWidget::createRepositorySettings() {
         "Core and Extra repositories are required and cannot be disabled.", 
         this);
     descLabel->setWordWrap(true);
-    descLabel->setStyleSheet("QLabel { color: #666; margin-bottom: 10px; }");
+    descLabel->setProperty("class", "settings-description");
     repoLayout->addWidget(descLabel);
     
     // Core repository (always enabled, cannot be disabled)
@@ -129,7 +127,7 @@ void SettingsWidget::createRepositorySettings() {
         "and may require administrator privileges.", 
         this);
     infoLabel->setWordWrap(true);
-    infoLabel->setStyleSheet("QLabel { color: #888; font-style: italic; margin-top: 10px; }");
+    infoLabel->setProperty("class", "settings-info-italic");
     repoLayout->addWidget(infoLabel);
     
     // Apply button
@@ -157,14 +155,14 @@ void SettingsWidget::createChaoticAurSettings() {
         "Setup requires installing the keyring and mirrorlist packages.",
         this);
     descLabel->setWordWrap(true);
-    descLabel->setStyleSheet("QLabel { color: #666; margin-bottom: 10px; }");
+    descLabel->setProperty("class", "settings-description");
     chaoticLayout->addWidget(descLabel);
     
     // Setup button section
     auto* setupLayout = new QHBoxLayout();
     
     auto* setupLabel = new QLabel("Install Chaotic-AUR:", this);
-    setupLabel->setStyleSheet("QLabel { font-weight: bold; }");
+    setupLabel->setProperty("class", "settings-section-label");
     setupLayout->addWidget(setupLabel);
     
     setupLayout->addStretch();
@@ -184,8 +182,8 @@ void SettingsWidget::createChaoticAurSettings() {
         "This will install chaotic-keyring and chaotic-mirrorlist from the official Chaotic-AUR repository.",
         this);
     setupInfoLabel->setWordWrap(true);
-    setupInfoLabel->setStyleSheet("QLabel { color: #888; font-size: 11px; margin-top: 5px; margin-left: 10px; }");
-    chaoticLayout->addWidget(setupInfoLabel);
+    setupInfoLabel->setProperty("class", "settings-help-text");
+	  chaoticLayout->addWidget(setupInfoLabel);
     
     // Spacer
     chaoticLayout->addSpacing(10);
@@ -194,8 +192,8 @@ void SettingsWidget::createChaoticAurSettings() {
     auto* removeLayout = new QHBoxLayout();
     
     auto* removeLabel = new QLabel("Remove Chaotic-AUR:", this);
-    removeLabel->setStyleSheet("QLabel { font-weight: bold; }");
-    removeLayout->addWidget(removeLabel);
+    removeLabel->setProperty("class", "settings-section-label");
+	  removeLayout->addWidget(removeLabel);
     
     removeLayout->addStretch();
     
@@ -214,8 +212,8 @@ void SettingsWidget::createChaoticAurSettings() {
         "This will remove the Chaotic-AUR packages. You need to uncheck the Chaotic-AUR option above or manually edit /etc/pacman.conf to remove the repository configuration.",
         this);
     removeInfoLabel->setWordWrap(true);
-    removeInfoLabel->setStyleSheet("QLabel { color: #888; font-size: 11px; margin-top: 5px; margin-left: 10px; }");
-    chaoticLayout->addWidget(removeInfoLabel);
+    removeInfoLabel->setProperty("class", "settings-help-text");
+	  chaoticLayout->addWidget(removeInfoLabel);
     
     m_chaoticAurGroup->setLayout(chaoticLayout);
 }
@@ -229,7 +227,7 @@ void SettingsWidget::createMaintenanceSettings() {
         "System maintenance and troubleshooting tools.",
         this);
     descLabel->setWordWrap(true);
-    descLabel->setStyleSheet("QLabel { color: #666; margin-bottom: 10px; }");
+    descLabel->setProperty("class", "settings-description");
     maintenanceLayout->addWidget(descLabel);
     
     // Lock file section
@@ -238,8 +236,8 @@ void SettingsWidget::createMaintenanceSettings() {
     auto* lockFileLabel = new QLabel(
         "Pacman Database Lock:",
         this);
-    lockFileLabel->setStyleSheet("QLabel { font-weight: bold; }");
-    lockFileLayout->addWidget(lockFileLabel);
+    lockFileLabel->setProperty("class", "settings-section-label");
+	  lockFileLayout->addWidget(lockFileLabel);
     
     lockFileLayout->addStretch();
     
@@ -259,7 +257,7 @@ void SettingsWidget::createMaintenanceSettings() {
         "Remove it only if you're certain no package manager is currently running.",
         this);
     lockInfoLabel->setWordWrap(true);
-    lockInfoLabel->setStyleSheet("QLabel { color: #888; font-size: 11px; margin-top: 5px; margin-left: 10px; }");
+    lockInfoLabel->setProperty("class", "settings-help-text");
     maintenanceLayout->addWidget(lockInfoLabel);
     
     // Spacer
@@ -271,7 +269,7 @@ void SettingsWidget::createMaintenanceSettings() {
     auto* syncReposLabel = new QLabel(
         "Synchronize Repositories:",
         this);
-    syncReposLabel->setStyleSheet("QLabel { font-weight: bold; }");
+	  syncReposLabel->setProperty("class", "settings-section-label");
     syncReposLayout->addWidget(syncReposLabel);
     
     syncReposLayout->addStretch();
@@ -292,7 +290,7 @@ void SettingsWidget::createMaintenanceSettings() {
         "or when you want to ensure you have the latest package information.",
         this);
     syncInfoLabel->setWordWrap(true);
-    syncInfoLabel->setStyleSheet("QLabel { color: #888; font-size: 11px; margin-top: 5px; margin-left: 10px; }");
+    syncInfoLabel->setProperty("class", "settings-help-text");
     maintenanceLayout->addWidget(syncInfoLabel);
     
     // Spacer
@@ -304,7 +302,7 @@ void SettingsWidget::createMaintenanceSettings() {
     auto* cancelProcessLabel = new QLabel(
         "Cancel Running Process:",
         this);
-    cancelProcessLabel->setStyleSheet("QLabel { font-weight: bold; }");
+    cancelProcessLabel->setProperty("class", "settings-section-label");
     cancelProcessLayout->addWidget(cancelProcessLabel);
     
     cancelProcessLayout->addStretch();
@@ -326,7 +324,7 @@ void SettingsWidget::createMaintenanceSettings() {
         "This is useful when you see 'Another operation is already in progress' and want to stop it.",
         this);
     cancelInfoLabel->setWordWrap(true);
-    cancelInfoLabel->setStyleSheet("QLabel { color: #888; font-size: 11px; margin-top: 5px; margin-left: 10px; }");
+	  cancelInfoLabel->setProperty("class", "settings-help-text");
     maintenanceLayout->addWidget(cancelInfoLabel);
     
     m_maintenanceGroup->setLayout(maintenanceLayout);
@@ -809,8 +807,10 @@ void SettingsWidget::onApplyClicked() {
     // Show results and offer database sync if changes were applied
     if (changesApplied && success) {
         m_statusLabel->setText("Settings applied successfully! Please sync package databases.");
-        m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
-        m_statusLabel->show();
+        m_statusLabel->setProperty("class", "status-msg-success");
+        m_statusLabel->style()->unpolish(m_statusLabel); 
+        m_statusLabel->style()->polish(m_statusLabel);
+		    m_statusLabel->show();
         
         m_applyButton->setEnabled(false);
         
@@ -828,22 +828,25 @@ void SettingsWidget::onApplyClicked() {
                 
                 if (process.exitCode() == 0) {
                     m_statusLabel->setText("Package databases synced successfully!");
-                    Logger::info("Package databases synced after repository change");
+                    m_statusLabel->setProperty("class", "status-msg-success");
+				            Logger::info("Package databases synced after repository change");
                     
                     // Refresh ALPM databases to pick up the new repository
                     AlpmWrapper::instance().refreshDatabases();
                 } else {
                     m_statusLabel->setText("Failed to sync package databases. Please run 'sudo pacman -Sy' manually.");
-                    m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
-                }
+			              m_statusLabel->setProperty("class", "status-msg-error");
+			          }
             } else {
                 // Even if they don't sync now, refresh ALPM to detect the new repo configuration
                 AlpmWrapper::instance().refreshDatabases();
             }
     } else if (!success) {
         m_statusLabel->setText("Failed to apply settings. Please check permissions.");
-        m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
-        m_statusLabel->show();
+        m_statusLabel->setProperty("class", "status-msg-error");
+        m_statusLabel->style()->unpolish(m_statusLabel);
+        m_statusLabel->style()->polish(m_statusLabel);
+		    m_statusLabel->show();
     }
 }
 
@@ -900,7 +903,9 @@ void SettingsWidget::onRemoveLockClicked() {
         
         if (process.exitCode() == 0) {
             m_statusLabel->setText("Lock file removed successfully!");
-            m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
+            m_statusLabel->setProperty("class", "status-msg-success");
+            m_statusLabel->style()->unpolish(m_statusLabel);
+            m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
             Logger::info("Pacman lock file removed successfully");
             
@@ -909,7 +914,9 @@ void SettingsWidget::onRemoveLockClicked() {
                 "You can now run package operations.");
         } else {
             m_statusLabel->setText("Failed to remove lock file. Check permissions.");
-            m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
+            m_statusLabel->setProperty("class", "status-msg-error");
+            m_statusLabel->style()->unpolish(m_statusLabel);
+            m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
             Logger::error("Failed to remove pacman lock file");
             
@@ -942,7 +949,9 @@ void SettingsWidget::onSetupChaoticClicked() {
     }
     
     m_statusLabel->setText("Setting up Chaotic-AUR repository...");
-    m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
+    m_statusLabel->setProperty("class", "status-msg-info");
+    m_statusLabel->style()->unpolish(m_statusLabel);
+    m_statusLabel->style()->polish(m_statusLabel);
     m_statusLabel->show();
     m_setupChaoticButton->setEnabled(false);
     
@@ -977,9 +986,11 @@ void SettingsWidget::onSetupChaoticClicked() {
         
         if (exitCode == 0 && exitStatus == QProcess::NormalExit) {
             m_statusLabel->setText("Chaotic-AUR packages installed successfully!");
-            m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
+            m_statusLabel->setProperty("class", "status-msg-success");
+            m_statusLabel->style()->unpolish(m_statusLabel);
+            m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
-            Logger::info("Chaotic-AUR packages installed successfully");
+						Logger::info("Chaotic-AUR packages installed successfully");
             
             // Refresh the chaotic-aur checkbox status
             loadCurrentSettings();
@@ -990,7 +1001,9 @@ void SettingsWidget::onSetupChaoticClicked() {
                 "After enabling, remember to sync the package databases.");
         } else {
             m_statusLabel->setText("Failed to install Chaotic-AUR packages.");
-            m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
+            m_statusLabel->setProperty("class", "status-msg-error");
+            m_statusLabel->style()->unpolish(m_statusLabel);
+            m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
             Logger::error(QString("Failed to install Chaotic-AUR packages. Exit code: %1").arg(exitCode));
             
@@ -1032,10 +1045,12 @@ void SettingsWidget::onRemoveChaoticClicked() {
     }
     
     m_statusLabel->setText("Removing Chaotic-AUR packages...");
-    m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
+    m_statusLabel->setProperty("class", "status-msg-info");
+    m_statusLabel->style()->unpolish(m_statusLabel);
+    m_statusLabel->style()->polish(m_statusLabel);
     m_statusLabel->show();
-    m_removeChaoticButton->setEnabled(false);
-    
+    m_removeChaoticButton->setEnabled(false); 
+
     // Remove chaotic-keyring and chaotic-mirrorlist
     QProcess* process = new QProcess(this);
     connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
@@ -1045,7 +1060,9 @@ void SettingsWidget::onRemoveChaoticClicked() {
         
         if (exitCode == 0 && exitStatus == QProcess::NormalExit) {
             m_statusLabel->setText("Chaotic-AUR packages removed successfully!");
-            m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
+            m_statusLabel->setProperty("class", "status-msg-success");
+            m_statusLabel->style()->unpolish(m_statusLabel);
+            m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
             Logger::info("Chaotic-AUR packages removed successfully");
             
@@ -1058,7 +1075,9 @@ void SettingsWidget::onRemoveChaoticClicked() {
                 "the [chaotic-aur] section in /etc/pacman.conf");
         } else {
             m_statusLabel->setText("Failed to remove Chaotic-AUR packages.");
-            m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
+            m_statusLabel->setProperty("class", "status-msg-error");
+            m_statusLabel->style()->unpolish(m_statusLabel);
+            m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
             Logger::error("Failed to remove Chaotic-AUR packages");
             
@@ -1088,12 +1107,14 @@ void SettingsWidget::onSyncReposClicked() {
     if (msgBox.exec() != QMessageBox::Yes) {
         return;
     }
-    
+
     m_statusLabel->setText("Synchronizing repositories...");
-    m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
+    m_statusLabel->setProperty("class", "status-msg-info");
+    m_statusLabel->style()->unpolish(m_statusLabel);
+    m_statusLabel->style()->polish(m_statusLabel);
     m_statusLabel->show();
-    m_syncReposButton->setEnabled(false);
-    
+    m_syncReposButton->setEnabled(false); 
+
     // Run pacman -Sy with pkexec
     QProcess* process = new QProcess(this);
     connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
@@ -1103,7 +1124,9 @@ void SettingsWidget::onSyncReposClicked() {
         
         if (exitCode == 0 && exitStatus == QProcess::NormalExit) {
             m_statusLabel->setText("Repositories synchronized successfully!");
-            m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
+            m_statusLabel->setProperty("class", "status-msg-success");
+            m_statusLabel->style()->unpolish(m_statusLabel);
+            m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
             Logger::info("Repositories synchronized successfully");
             
@@ -1115,7 +1138,9 @@ void SettingsWidget::onSyncReposClicked() {
                 "The package list has been updated with the latest available packages.");
         } else {
             m_statusLabel->setText("Failed to synchronize repositories.");
-            m_statusLabel->setStyleSheet("QLabel { color: #aa0000; padding: 10px; }");
+            m_statusLabel->setProperty("class", "status-msg-error");
+            m_statusLabel->style()->unpolish(m_statusLabel);
+            m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
             Logger::error("Failed to synchronize repositories");
             
@@ -1155,16 +1180,20 @@ void SettingsWidget::onCancelProcessClicked() {
     }
     
     m_statusLabel->setText("Cancelling running process...");
-    m_statusLabel->setStyleSheet("QLabel { color: #0066cc; padding: 10px; }");
-    m_statusLabel->show();
-    
+    m_statusLabel->setProperty("class", "status-msg-info");
+    m_statusLabel->style()->unpolish(m_statusLabel);
+    m_statusLabel->style()->polish(m_statusLabel);
+    m_statusLabel->show(); 
+
     // Cancel the operation
     PackageManager::instance().cancelRunningOperation();
     
     m_statusLabel->setText("Process cancelled successfully!");
-    m_statusLabel->setStyleSheet("QLabel { color: #00aa00; padding: 10px; font-weight: bold; }");
+    m_statusLabel->setProperty("class", "status-msg-success");
+    m_statusLabel->style()->unpolish(m_statusLabel);
+    m_statusLabel->style()->polish(m_statusLabel);
     m_statusLabel->show();
-    
+
     Logger::info("User cancelled running package operation from settings");
     
     QMessageBox::information(this, "Process Cancelled",

@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QLabel>
 #include <QPushButton>
+#include <QPainter>
 #include "../utils/types.h"
 
 /**
@@ -30,7 +31,8 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
     void enterEvent(QEnterEvent* event) override;
     void leaveEvent(QEvent* event) override;
-    
+    void paintEvent(QPaintEvent*) override;    
+
 private:
     void setupUi();
     
