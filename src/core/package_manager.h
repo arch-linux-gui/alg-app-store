@@ -54,7 +54,7 @@ private:
     PackageManager();
     
     void detectHelper();
-    void executeCommand(const QString& command, const QStringList& args);
+    void executeCommand(const QString& command, const QStringList& args, bool needsAuth = false);
     
     Helper m_helper = Helper::Pacman;
     std::unique_ptr<QProcess> m_process;

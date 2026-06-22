@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(alg-app-store VERSION 0.2.28 LANGUAGES CXX)
+project(alg-app-store VERSION 0.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -34,6 +34,7 @@ set(SOURCES
     # Core
     src/core/alpm_wrapper.cpp
     src/core/aur_helper.cpp
+    src/core/auth_manager.cpp
     src/core/package_manager.cpp
     
     # GUI
@@ -55,6 +56,7 @@ set(HEADERS
     # Core
     src/core/alpm_wrapper.h
     src/core/aur_helper.h
+    src/core/auth_manager.h
     src/core/package_manager.h
     
     # GUI
@@ -86,6 +88,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 
 # Link directories
 link_directories(${ALPM_LIBRARY_DIRS})
+
+# Add version definition
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    APP_VERSION="${PROJECT_VERSION}"
+)
 
 # Compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE
