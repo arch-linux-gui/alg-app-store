@@ -31,10 +31,7 @@ void HomeWidget::setupUi() {
     auto* mainLayout = new QVBoxLayout(this);
     
     auto* titleLabel = new QLabel("Featured Packages", this);
-    auto titleFont = titleLabel->font();
-    titleFont.setPointSize(24);
-    titleFont.setBold(true);
-    titleLabel->setFont(titleFont);
+    titleLabel->setObjectName("view-title");
     mainLayout->addWidget(titleLabel);
     
     m_scrollArea->setWidget(m_contentWidget);

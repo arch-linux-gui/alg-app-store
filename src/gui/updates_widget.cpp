@@ -16,7 +16,10 @@ class UpdateItem : public QWidget {
 public:
     UpdateItem(const UpdateInfo& info, QWidget* parent = nullptr)
         : QWidget(parent), m_info(info) {
-        
+
+        // Required for the app-wide stylesheet to paint this custom widget's background
+        setAttribute(Qt::WA_StyledBackground, true);
+
         auto* layout = new QHBoxLayout(this);
         layout->setContentsMargins(10, 10, 10, 10);
         
@@ -117,9 +120,7 @@ void UpdatesWidget::setupUi() {
     auto* headerLayout = new QHBoxLayout();
     
     auto* titleLabel = new QLabel("Available Updates", this);
-    auto titleFont = titleLabel->font();
     titleLabel->setObjectName("view-title");
-	  titleLabel->setFont(titleFont);
     headerLayout->addWidget(titleLabel);
     
     headerLayout->addStretch();
@@ -133,6 +134,7 @@ void UpdatesWidget::setupUi() {
     
     m_updateAllButton->setMinimumHeight(35);
     m_updateAllButton->setMinimumWidth(120);
+    m_updateAllButton->setProperty("class", "primary-btn");
     m_updateAllButton->setEnabled(false);
     connect(m_updateAllButton, &QPushButton::clicked, this, &UpdatesWidget::onUpdateAll);
     headerLayout->addWidget(m_updateAllButton);

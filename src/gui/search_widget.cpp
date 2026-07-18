@@ -32,10 +32,7 @@ void SearchWidget::setupUi() {
     
     // Title
     auto* titleLabel = new QLabel("Search Packages", this);
-    auto titleFont = titleLabel->font();
-    titleFont.setPointSize(24);
-    titleFont.setBold(true);
-    titleLabel->setFont(titleFont);
+    titleLabel->setObjectName("view-title");
     mainLayout->addWidget(titleLabel);
     
     // Search bar
@@ -59,6 +56,7 @@ void SearchWidget::setupUi() {
     
     m_searchButton->setMinimumHeight(35);
     m_searchButton->setMinimumWidth(100);
+    m_searchButton->setProperty("class", "primary-btn");
     connect(m_searchButton, &QPushButton::clicked, this, &SearchWidget::onSearchClicked);
     searchLayout->addWidget(m_searchButton);
     

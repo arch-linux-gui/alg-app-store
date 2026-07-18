@@ -304,11 +304,13 @@ void PackageDetailsDialog::setupUi() {
     
     m_installButton->setMinimumWidth(100);
     m_installButton->setMinimumHeight(35);
+    m_installButton->setProperty("class", "primary-btn");
     connect(m_installButton, &QPushButton::clicked, this, &PackageDetailsDialog::onInstall);
     buttonLayout->addWidget(m_installButton);
     
     m_uninstallButton->setMinimumWidth(100);
     m_uninstallButton->setMinimumHeight(35);
+    m_uninstallButton->setProperty("class", "danger-btn");
     connect(m_uninstallButton, &QPushButton::clicked, this, &PackageDetailsDialog::onUninstall);
     buttonLayout->addWidget(m_uninstallButton);
     
