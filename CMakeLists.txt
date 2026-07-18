@@ -72,7 +72,7 @@ set(HEADERS
 add_executable(${PROJECT_NAME}
     ${SOURCES}
     ${HEADERS}
-	  resources.qrc
+    resources.qrc
 )
 
 # Link libraries
