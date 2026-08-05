@@ -16,8 +16,16 @@ InstalledWidget::InstalledWidget(QWidget* parent)
     , m_contentWidget(new QWidget())
     , m_gridLayout(new QGridLayout(m_contentWidget))
     , m_statusLabel(new QLabel(this))
-    , m_countLabel(new QLabel(this)) {
-    
+    , m_countLabel(new QLabel(this)) 
+    , m_filterTimer(new QTimer(this)) {
+
+    // debounce timer (waits 300ms after last keystroke)
+    m_filterTimer->setSingleShot(true);
+    m_filterTimer->setInterval(300);
+    connect(m_filterTimer, &QTimer::timeout, this, [this]() {
+        filterPackages(m_filterInput->text());
+    });
+
     setupUi();
     loadInstalledPackages();
 }
@@ -84,7 +92,7 @@ void InstalledWidget::loadInstalledPackages() {
             m_countLabel->setText(QString("%1 packages installed")
                                  .arg(packages.size()));
             
-            displayPackages(packages);
+            filterPackages(m_filterInput->text());
             
             Logger::info(QString("Loaded %1 installed packages").arg(packages.size()));
         }, Qt::QueuedConnection);
@@ -158,16 +166,18 @@ void InstalledWidget::filterPackages(const QString& query) {
 }
 
 void InstalledWidget::onFilterTextChanged(const QString& text) {
-    filterPackages(text);
+    Q_UNUSED(text);
+    m_filterTimer->start();
 }
 
 void InstalledWidget::onPackageClicked(const PackageInfo& info) {
     Logger::info(QString("Package clicked: %1").arg(info.name));
     
     auto* dialog = new PackageDetailsDialog(info, this);
-    dialog->exec();
+    if(dialog->exec() == QDialog::Accepted) {
+      // Refresh after dialog closes in case package was uninstalled
+      refreshPackages();
+    }
+
     dialog->deleteLater();
-    
-    // Refresh after dialog closes in case package was uninstalled
-    refreshPackages();
 }

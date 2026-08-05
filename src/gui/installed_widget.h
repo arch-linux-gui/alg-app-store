@@ -6,6 +6,7 @@
 #include <QGridLayout>
 #include <QLineEdit>
 #include <QLabel>
+#include <QTimer>
 #include <QVector>
 #include "../utils/types.h"
 
@@ -42,6 +43,8 @@ private:
     
     QVector<PackageInfo> m_allPackages;
     QVector<PackageInfo> m_filteredPackages;
+
+    QTimer* m_filterTimer;
     
 private slots:
     void onPackageClicked(const PackageInfo& info);
