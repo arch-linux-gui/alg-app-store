@@ -189,7 +189,7 @@ void PackageManager::onProcessOutput() {
 
 void PackageManager::cancelRunningOperation() {
     if (m_process && m_process->state() != QProcess::NotRunning) {
-        Logger::warning("Cancelling running operation...");
+        Logger::warning("Killing running operation...");
         emit operationOutput("\n>>> Operation cancelled by user <<<\n");
         
         // When using pkexec, we need to kill the actual pacman/yay/paru process

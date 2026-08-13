@@ -300,17 +300,17 @@ void SettingsWidget::createMaintenanceSettings() {
     auto* cancelProcessLayout = new QHBoxLayout();
     
     auto* cancelProcessLabel = new QLabel(
-        "Cancel Running Process:",
+        "Kill Running Process:",
         this);
     cancelProcessLabel->setProperty("class", "settings-section-label");
     cancelProcessLayout->addWidget(cancelProcessLabel);
     
     cancelProcessLayout->addStretch();
     
-    m_cancelProcessButton = new QPushButton("Cancel Process", this);
+    m_cancelProcessButton = new QPushButton("Kill Process", this);
     m_cancelProcessButton->setMinimumWidth(150);
     m_cancelProcessButton->setToolTip(
-        "Cancel any running package operation (install, uninstall, update).\n"
+        "Kill any running package operation (install, uninstall, update).\n"
         "Use this if an operation is stuck or taking too long.\n"
         "This is different from removing the lock file - it actually stops the running process.");
     connect(m_cancelProcessButton, &QPushButton::clicked, this, &SettingsWidget::onCancelProcessClicked);
@@ -320,7 +320,7 @@ void SettingsWidget::createMaintenanceSettings() {
     
     // Cancel process info
     auto* cancelInfoLabel = new QLabel(
-        "Use this to cancel a stuck installation, uninstallation, or update process.\n"
+        "Use this to kill process which is stuck at installation, uninstallation, or update.\n"
         "This is useful when you see 'Another operation is already in progress' and want to stop it.",
         this);
     cancelInfoLabel->setWordWrap(true);
@@ -1158,20 +1158,20 @@ void SettingsWidget::onCancelProcessClicked() {
     if (!PackageManager::instance().isOperationRunning()) {
         QMessageBox::information(this, "No Process Running",
             "There is no package operation currently running.\n"
-            "Nothing to cancel.");
+            "Nothing to kill.");
         return;
     }
     
     // Show confirmation dialog
     QMessageBox msgBox(this);
     msgBox.setIcon(QMessageBox::Warning);
-    msgBox.setWindowTitle("Cancel Running Process");
-    msgBox.setText("Are you sure you want to cancel the running package operation?");
+    msgBox.setWindowTitle("Kill Running Process");
+    msgBox.setText("Are you sure you want to kill the running package operation?");
     msgBox.setInformativeText(
         "This will stop the current installation, uninstallation, or update process.\n\n"
-        "WARNING: Cancelling a package operation may leave your system in an inconsistent state.\n"
+        "WARNING: Killing a package operation may leave your system in an inconsistent state.\n"
         "You may need to run the operation again to complete it properly.\n\n"
-        "It's recommended to only cancel if the process is truly stuck or unresponsive.");
+        "It's recommended to only kill operation if the process is truly stuck or unresponsive.");
     msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     msgBox.setDefaultButton(QMessageBox::No);
     
@@ -1179,7 +1179,7 @@ void SettingsWidget::onCancelProcessClicked() {
         return;
     }
     
-    m_statusLabel->setText("Cancelling running process...");
+    m_statusLabel->setText("Killing running process...");
     m_statusLabel->setProperty("class", "status-msg-info");
     m_statusLabel->style()->unpolish(m_statusLabel);
     m_statusLabel->style()->polish(m_statusLabel);
@@ -1188,16 +1188,16 @@ void SettingsWidget::onCancelProcessClicked() {
     // Cancel the operation
     PackageManager::instance().cancelRunningOperation();
     
-    m_statusLabel->setText("Process cancelled successfully!");
+    m_statusLabel->setText("Process killed successfully!");
     m_statusLabel->setProperty("class", "status-msg-success");
     m_statusLabel->style()->unpolish(m_statusLabel);
     m_statusLabel->style()->polish(m_statusLabel);
     m_statusLabel->show();
 
-    Logger::info("User cancelled running package operation from settings");
+    Logger::info("User killed running package operation from settings");
     
-    QMessageBox::information(this, "Process Cancelled",
-        "The running package operation has been cancelled.\n\n"
+    QMessageBox::information(this, "Process Killed",
+        "The running package operation has been killed.\n\n"
         "If you were in the middle of installing or updating a package, "
         "you may need to run the operation again to complete it.");
 }
