@@ -321,7 +321,7 @@ void PackageDetailsDialog::setupUi() {
     
     m_closeButton->setMinimumWidth(100);
     m_closeButton->setMinimumHeight(35);
-    connect(m_closeButton, &QPushButton::clicked, this, &QDialog::accept);
+    connect(m_closeButton, &QPushButton::clicked, this, &QDialog::reject);
     buttonLayout->addWidget(m_closeButton);
     
     dialogLayout->addWidget(buttonWidget, 0);
