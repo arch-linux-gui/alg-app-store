@@ -7,6 +7,7 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QtConcurrent>
+#include <QStyle>
 
 InstalledWidget::InstalledWidget(QWidget* parent)
     : QWidget(parent)
@@ -15,8 +16,16 @@ InstalledWidget::InstalledWidget(QWidget* parent)
     , m_contentWidget(new QWidget())
     , m_gridLayout(new QGridLayout(m_contentWidget))
     , m_statusLabel(new QLabel(this))
-    , m_countLabel(new QLabel(this)) {
-    
+    , m_countLabel(new QLabel(this)) 
+    , m_filterTimer(new QTimer(this)) {
+
+    // debounce timer (waits 300ms after last keystroke)
+    m_filterTimer->setSingleShot(true);
+    m_filterTimer->setInterval(300);
+    connect(m_filterTimer, &QTimer::timeout, this, [this]() {
+        filterPackages(m_filterInput->text());
+    });
+
     setupUi();
     loadInstalledPackages();
 }
@@ -28,17 +37,14 @@ void InstalledWidget::setupUi() {
     auto* headerLayout = new QHBoxLayout();
     
     auto* titleLabel = new QLabel("Installed Packages", this);
-    auto titleFont = titleLabel->font();
-    titleFont.setPointSize(24);
-    titleFont.setBold(true);
-    titleLabel->setFont(titleFont);
-    headerLayout->addWidget(titleLabel);
-    
+    titleLabel->setObjectName("view-title"); 
+    headerLayout->addWidget(titleLabel); 
     headerLayout->addStretch();
     
-    m_countLabel->setStyleSheet("font-size: 14px; color: #888;");
-    headerLayout->addWidget(m_countLabel);
-    
+    // Counter Label
+    m_countLabel->setObjectName("package-count-label"); 
+    headerLayout->addWidget(m_countLabel);    
+
     auto* refreshButton = new QPushButton("Refresh", this);
     connect(refreshButton, &QPushButton::clicked, this, &InstalledWidget::refreshPackages);
     headerLayout->addWidget(refreshButton);
@@ -54,7 +60,8 @@ void InstalledWidget::setupUi() {
     mainLayout->addWidget(m_filterInput);
     
     // Status label
-    m_statusLabel->setAlignment(Qt::AlignCenter);
+    m_statusLabel->setObjectName("status-message");
+	  m_statusLabel->setAlignment(Qt::AlignCenter);
     m_statusLabel->setText("Loading installed packages...");
     mainLayout->addWidget(m_statusLabel);
     
@@ -85,7 +92,7 @@ void InstalledWidget::loadInstalledPackages() {
             m_countLabel->setText(QString("%1 packages installed")
                                  .arg(packages.size()));
             
-            displayPackages(packages);
+            filterPackages(m_filterInput->text());
             
             Logger::info(QString("Loaded %1 installed packages").arg(packages.size()));
         }, Qt::QueuedConnection);
@@ -159,16 +166,18 @@ void InstalledWidget::filterPackages(const QString& query) {
 }
 
 void InstalledWidget::onFilterTextChanged(const QString& text) {
-    filterPackages(text);
+    Q_UNUSED(text);
+    m_filterTimer->start();
 }
 
 void InstalledWidget::onPackageClicked(const PackageInfo& info) {
     Logger::info(QString("Package clicked: %1").arg(info.name));
     
     auto* dialog = new PackageDetailsDialog(info, this);
-    dialog->exec();
+    if(dialog->exec() == QDialog::Accepted) {
+      // Refresh after dialog closes in case package was uninstalled
+      refreshPackages();
+    }
+
     dialog->deleteLater();
-    
-    // Refresh after dialog closes in case package was uninstalled
-    refreshPackages();
 }

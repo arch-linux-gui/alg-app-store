@@ -1,0 +1,116 @@
+/* ============================================================
+   Containers — cards, list items, group boxes, panels
+   ============================================================ */
+
+QScrollArea {
+    background-color: transparent;
+    border: none;
+}
+
+QScrollArea QLabel {
+    background-color: transparent;
+}
+
+/* ---- Package cards ---- */
+
+QWidget[class="package-card"] {
+    background-color: #262626;
+    border: 1px solid #333333;
+    border-radius: 12px;
+}
+
+QWidget[class="package-card"][hovered="true"] {
+    background-color: #2b2b2b;
+    border: 1px solid #3b82f6;
+}
+
+QWidget[class="package-card"] QLabel {
+    background-color: transparent;
+    border: none;
+}
+
+/* ---- Update list rows ---- */
+
+QWidget[class="update-item"] {
+    background-color: #262626;
+    border: 1px solid #303030;
+    border-radius: 10px;
+}
+
+QWidget[class="update-item"] QLabel {
+    background-color: transparent;
+}
+
+/* ---- Group boxes (Settings) ---- */
+
+QGroupBox {
+    background-color: #242424;
+    border: 1px solid #303030;
+    border-radius: 12px;
+    margin-top: 24px;
+    padding-top: 20px;
+    font-weight: 600;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 4px 12px;
+    color: #a0a0a0;
+}
+
+QGroupBox QLabel, QGroupBox QRadioButton, QGroupBox QCheckBox {
+    background-color: transparent;
+}
+
+/* ---- Badges ---- */
+
+QLabel[class="status-badge"] {
+    background-color: rgba(74, 222, 128, 12%);
+    color: #4ade80;
+    border: 1px solid rgba(74, 222, 128, 35%);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+QLabel[class="repo-badge"] {
+    background-color: rgba(59, 130, 246, 12%);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 30%);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+/* ---- Monospace panels ---- */
+
+QTextEdit#log-viewer, QTextEdit#details-text-area {
+    background-color: #191919;
+    border: 1px solid #2d2d2d;
+    border-radius: 8px;
+    padding: 8px;
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+    font-size: 11px;
+    color: #b8b8b8;
+    selection-background-color: #3b82f6;
+    selection-color: #ffffff;
+}
+
+QLabel#command-display {
+    background-color: #191919;
+    color: #e8e8e8;
+    border: 1px solid #2d2d2d;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+    font-size: 13px;
+}
+
+QFrame#details-separator {
+    background-color: #2d2d2d;
+    border: none;
+    max-height: 1px;
+}

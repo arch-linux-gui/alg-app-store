@@ -1,0 +1,56 @@
+/* ============================================================
+   Navigation — menu bar and tab bar
+   ============================================================ */
+
+QMenuBar {
+    background-color: #242424;
+    color: #f2f2f2;
+    border-bottom: 1px solid #303030;
+    padding: 4px 8px;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
+QMenuBar::item:selected {
+    background-color: #303030;
+}
+
+QMenuBar::item:pressed {
+    background-color: #3a3a3a;
+}
+
+QTabWidget::pane {
+    border: none;
+    background-color: transparent;
+}
+
+QTabBar {
+    background-color: #242424;
+    border-bottom: 1px solid #303030;
+    qproperty-drawBase: 0;
+    outline: none;
+    alignment: center;
+}
+
+QTabBar::tab {
+    background-color: transparent;
+    color: #a0a0a0;
+    padding: 10px 24px;
+    margin: 6px 8px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+QTabBar::tab:selected {
+    background-color: #333333;
+    color: #ffffff;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #2b2b2b;
+    color: #d0d0d0;
+}

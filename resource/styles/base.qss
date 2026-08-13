@@ -1,0 +1,124 @@
+/* ============================================================
+   Base — global palette, typography, and window chrome
+   ------------------------------------------------------------
+   Palette:
+     Window bg      #1e1e1e
+     Surface        #242424   (menu bar, tab bar, group boxes)
+     Card           #262626
+     Raised/hover   #2d2d2d - #3a3a3a
+     Border         #303030 (subtle) / #3a3a3a (default) / #4a4a4a (strong)
+     Text           #f2f2f2 (primary) / #a0a0a0 (secondary) / #6e6e6e (dim)
+     Accent         #3b82f6 (ALG blue), hover #60a5fa
+     Success        #4ade80    Error #f87171
+   ============================================================ */
+
+* {
+    font-family: "Inter", "Cantarell", "Segoe UI", "Roboto", sans-serif;
+    color: #f2f2f2;
+}
+
+QMainWindow, QDialog, QWidget {
+    background-color: #1e1e1e;
+}
+
+QLabel {
+    background-color: transparent;
+}
+
+#view-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #f2f2f2;
+    margin-bottom: 10px;
+}
+
+QToolTip {
+    background-color: #242424;
+    color: #d8d8d8;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    padding: 6px 8px;
+}
+
+QToolTip QLabel {
+    background-color: transparent;
+    color: #d8d8d8;
+}
+
+QMenu {
+    background-color: #242424;
+    border: 1px solid #3a3a3a;
+    padding: 6px;
+}
+
+QMenu::item {
+    background-color: transparent;
+    color: #f2f2f2;
+    padding: 6px 24px 6px 12px;
+    border-radius: 6px;
+}
+
+QMenu::item:selected {
+    background-color: #303030;
+}
+
+QMenu::item:disabled {
+    color: #6e6e6e;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: #3a3a3a;
+    margin: 6px 8px;
+}
+
+QMessageBox QLabel {
+    background-color: transparent;
+}
+
+/* ---- Scrollbars (shared chrome) ---- */
+
+QScrollBar:vertical {
+    background-color: transparent;
+    width: 12px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #454545;
+    border-radius: 3px;
+    min-height: 30px;
+    margin: 4px 3px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #5a5a5a;
+}
+
+QScrollBar:horizontal {
+    background-color: transparent;
+    height: 12px;
+    margin: 0;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #454545;
+    border-radius: 3px;
+    min-width: 30px;
+    margin: 3px 4px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #5a5a5a;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    width: 0;
+    height: 0;
+    background: none;
+    border: none;
+}
+
+QScrollBar::add-page, QScrollBar::sub-page {
+    background: transparent;
+}
