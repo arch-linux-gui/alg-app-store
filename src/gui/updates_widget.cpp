@@ -407,6 +407,9 @@ void UpdatesWidget::onOperationOutput(const QString& output) {
 }
 
 void UpdatesWidget::onOperationCompleted(bool success, const QString& message) {
+    Q_UNUSED(success);
+    Q_UNUSED(message);
+
     // Refresh ALPM state so subsequent queries reflect the changes
     AlpmWrapper::instance().release();
     AlpmWrapper::instance().initialize();
@@ -424,16 +427,11 @@ void UpdatesWidget::onOperationCompleted(bool success, const QString& message) {
             }
         }
     }
-    
-    if (success) {
-        QMessageBox::information(this, "Success", message);
-        checkForUpdates();
-    } else {
-        QMessageBox::warning(this, "Operation Failed", message);
-    }
 }
 
 void UpdatesWidget::onOperationError(const QString& error) {
+    Q_UNUSED(error);
+
     // Refresh ALPM state (best-effort)
     AlpmWrapper::instance().release();
     AlpmWrapper::instance().initialize();
@@ -451,8 +449,6 @@ void UpdatesWidget::onOperationError(const QString& error) {
             }
         }
     }
-    
-    QMessageBox::critical(this, "Error", error);
 }
 
 #include "updates_widget.moc"
