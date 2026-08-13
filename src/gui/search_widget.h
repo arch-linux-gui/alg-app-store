@@ -51,10 +51,12 @@ private:
     
     QVector<PackageInfo> m_currentResults;
     QVector<PackageInfo> m_allResults;
+    bool m_searchInProgress = false;
     
 private slots:
     void onSearchClicked();
     void onAurSearchCompleted(const QVector<PackageInfo>& results);
+    void onAurSearchError(const QString& errorMsg);
     void onFilterChanged(int index);
     void onPackageClicked(const PackageInfo& info);
 };

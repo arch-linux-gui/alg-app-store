@@ -25,6 +25,8 @@ SearchWidget::SearchWidget(QWidget* parent)
     
     connect(m_aurHelper.get(), &AurHelper::searchCompleted,
             this, &SearchWidget::onAurSearchCompleted);
+    connect(m_aurHelper.get(), &AurHelper::error,
+            this, &SearchWidget::onAurSearchError);
 }
 
 void SearchWidget::setupUi() {
@@ -88,6 +90,11 @@ void SearchWidget::onSearchClicked() {
         return;
     }
     
+    if (m_searchInProgress) {
+        return;
+    }
+
+    m_searchInProgress = true;
     m_searchButton->setEnabled(false);
     m_searchButton->setText("Searching...");
     m_statusLabel->setText("Searching...");
@@ -119,6 +126,7 @@ void SearchWidget::onAurSearchCompleted(const QVector<PackageInfo>& results) {
     
     m_searchButton->setEnabled(true);
     m_searchButton->setText("Search");
+    m_searchInProgress = false;
     
     if (m_allResults.isEmpty()) {
         m_statusLabel->setText("No results found");
@@ -131,6 +139,19 @@ void SearchWidget::onAurSearchCompleted(const QVector<PackageInfo>& results) {
     onFilterChanged(m_filterCombo->currentIndex());
     
     Logger::info(QString("Search completed: %1 results").arg(m_allResults.size()));
+}
+
+void SearchWidget::onAurSearchError(const QString& errorMsg) {
+    Logger::warning(QString("AUR search failed: %1").arg(errorMsg));
+
+    m_searchButton->setEnabled(true);
+    m_searchButton->setText("Search");
+    m_searchInProgress = false;
+
+    if (m_allResults.isEmpty()) {
+        m_statusLabel->setText("No results found");
+        m_statusLabel->show();
+    }
 }
 
 void SearchWidget::onFilterChanged(int index) {
