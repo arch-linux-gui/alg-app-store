@@ -1,6 +1,6 @@
-# ALG App Store - Qt6/C++ Version
+# Explorer - Qt6/C++ Version
 
-A modern, native package manager for Arch Linux built with Qt6 and C++17. This is a complete rewrite of the original Wails-based application.
+A modern, native package manager for Arch Linux built with Qt6 and C++17. This is a complete rewrite of the original Wails-based application (formerly known as ALG App Store).
 
 ## Features
 
@@ -36,8 +36,8 @@ You can optionally also have either either yay or paru if you would like to work
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/arch-linux-gui/alg-app-store.git
-cd alg-app-store
+git clone https://github.com/arch-linux-gui/explorer.git
+cd explorer
 ```
 
 2. Run Build Script
@@ -53,13 +53,13 @@ Binary will be in the build directory.
 ### From Build Directory
 
 ```bash
-./build/alg-app-store
+./build/explorer
 ```
 
 ### From System Installation (if installed)
 
 ```bash
-alg-app-store
+explorer
 ```
 
 
@@ -71,13 +71,13 @@ It is distributed under the MIT License. Check LICENSE.
 ## Credits
 
 - **Author**: DemonKiller
-- **Original Project**: Wails-based ALG App Store
+- **Original Project**: Wails-based ALG App Store (predecessor of Explorer)
 - **Rewrite**: Qt6/C++ implementation
 - **Community**: Arch Linux and Qt communities
 
 ## Contact
 
 For issues, questions, or contributions, please visit:
-- GitHub: https://github.com/arch-linux-gui/alg-app-store
+- GitHub: https://github.com/arch-linux-gui/explorer
 - Website: https://arkalinuxgui.org
 - Discord: https://discord.com/invite/NgAFEw9Tkf

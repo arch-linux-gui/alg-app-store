@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" PROJECT_VERSION_STRING)
 
-project(alg-app-store VERSION ${PROJECT_VERSION_STRING} LANGUAGES CXX)
+project(explorer VERSION ${PROJECT_VERSION_STRING} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -103,6 +103,11 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 # Install desktop file
-install(FILES assets/alg-app-store.desktop
+install(FILES assets/explorer.desktop
     DESTINATION share/applications
+)
+
+# Install icon
+install(FILES assets/explorer.png
+    DESTINATION share/pixmaps
 )

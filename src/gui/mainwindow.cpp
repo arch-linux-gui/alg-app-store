@@ -36,7 +36,7 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::setupUi() {
-    setWindowTitle("ALG App Store (Beta)");
+    setWindowTitle("Explorer (Beta)");
     setMinimumSize(1024, 768);
     resize(1124, 868);
     
@@ -117,8 +117,8 @@ void MainWindow::createMenuBar() {
     
     auto* aboutAction = new QAction("&About", this);
     connect(aboutAction, &QAction::triggered, [this]() {
-        QMessageBox::about(this, "About ALG App Store",
-            "ALG App Store (Beta)\n\n"
+        QMessageBox::about(this, "About Explorer",
+            "Explorer (Beta)\n\n"
             "A modern package manager for Arch Linux\n"
             "Version: 0.2.30\n"
             "Built with Qt6 and C++17\n\n"

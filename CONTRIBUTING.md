@@ -31,8 +31,8 @@ Contributions are welcome and appreciated! To contribute:
 
 ```
 ├── assets
-│   ├── alg-app-store.desktop
-│   └── alg-app-store.png
+│   ├── explorer.desktop
+│   └── explorer.png
 ├── build.sh
 ├── CMakeLists.txt
 ├── CONTRIBUTING.md

@@ -7,14 +7,14 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     
     // Set application metadata
-    app.setApplicationName("ALG App Store");
+    app.setApplicationName("Explorer");
     app.setApplicationVersion("2.0.0");
     app.setOrganizationName("Arch Linux GUI");
-    
+
     // Set application style
     app.setStyle(QStyleFactory::create("Fusion"));
-    
-    Logger::info("Starting ALG App Store");
+
+    Logger::info("Starting Explorer");
     Logger::info(QString("Qt version: %1").arg(qVersion()));
     
     MainWindow window;

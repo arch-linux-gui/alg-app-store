@@ -1,13 +1,13 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=App Store
-GenericName=ALG App Store
+Name=Explorer
+GenericName=App Store
 Keywords=app;store;software;install;system;
 Encoding=UTF-8
 Terminal=false
-Exec=alg-app-store
-Icon=/usr/share/pixmaps/alg-app-store.png
+Exec=explorer
+Icon=/usr/share/pixmaps/explorer.png
 Comment=Install all your favourite apps
 Categories=System;Apps;
 StartupNotify=true

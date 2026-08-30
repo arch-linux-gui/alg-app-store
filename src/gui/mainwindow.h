@@ -13,7 +13,7 @@ class UpdatesWidget;
 class SettingsWidget;
 
 /**
- * @brief Main application window for ALG App Store.
+ * @brief Main application window for Explorer.
  * 
  * Memory Management:
  * - m_tabWidget: Owned by std::unique_ptr (central widget)
