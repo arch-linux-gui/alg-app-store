@@ -2,7 +2,7 @@
 
 Contributions are welcome and appreciated! To contribute:
 
-- Code follows C++17 standards
+- Code follows C++20 standards
 - Proper error handling and logging
 - Thread safety for concurrent operations
 - Qt best practices for GUI code
@@ -15,7 +15,7 @@ Contributions are welcome and appreciated! To contribute:
    git checkout -b feature/your-feature-name
    ```
 3. **Make Your Changes:**
-   - Follow modern C++17 best practices
+   - Follow modern C++20 best practices
    - Use Qt6 APIs and conventions
    - Ensure code compiles without warnings
    - Test on your desktop environment (KDE, GNOME, or Xfce)
@@ -47,7 +47,8 @@ Contributions are welcome and appreciated! To contribute:
 │   │   ├── aur_helper.cpp
 │   │   ├── aur_helper.h
 │   │   ├── package_manager.cpp
-│   │   └── package_manager.h
+│   │   ├── package_manager.h
+│   │   └── CMakeLists.txt
 │   ├── gui
 │   │   ├── home_widget.cpp
 │   │   ├── home_widget.h
@@ -64,11 +65,13 @@ Contributions are welcome and appreciated! To contribute:
 │   │   ├── settings_widget.cpp
 │   │   ├── settings_widget.h
 │   │   ├── updates_widget.cpp
-│   │   └── updates_widget.h
+│   │   ├── updates_widget.h
+│   │   └── CMakeLists.txt
 │   ├── main.cpp
 │   └── utils
 │       ├── logger.h
-│       └── types.h
+│       ├── types.h
+│       └── CMakeLists.txt
 ├── stylesheet.qss
 └── TODO.md
 

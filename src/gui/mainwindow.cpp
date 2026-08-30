@@ -121,7 +121,7 @@ void MainWindow::createMenuBar() {
             "Explorer (Beta)\n\n"
             "A modern package manager for Arch Linux\n"
             "Version: 0.2.30\n"
-            "Built with Qt6 and C++17\n\n"
+            "Built with Qt6 and C++20\n\n"
             "© 2025 Arka Linux GUI");
     });
     helpMenu->addAction(aboutAction);

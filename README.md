@@ -1,6 +1,6 @@
 # Explorer - Qt6/C++ Version
 
-A modern, native package manager for Arch Linux built with Qt6 and C++17. This is a complete rewrite of the original Wails-based application (formerly known as ALG App Store).
+A modern, native package manager for Arch Linux built with Qt6 and C++20. This is a complete rewrite of the original Wails-based application (formerly known as ALG App Store).
 
 ## Features
 
@@ -15,7 +15,7 @@ A modern, native package manager for Arch Linux built with Qt6 and C++17. This i
 
 ## Technology Stack
 
-- **Language**: C++17
+- **Language**: C++20
 - **GUI Framework**: Qt6 (Widgets)
 - **Package Management**: libalpm (Arch Linux Package Manager library)
 - **AUR Integration**: AUR RPC API via Qt Network + Chaotic AUR Support
