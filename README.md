@@ -11,7 +11,7 @@ A modern, native package manager for Arch Linux built with Qt6 and C++20. This i
 - **Modern UI**: Clean, dark-themed interface with responsive design
 - **Smart Helper Detection**: Automatically detects and uses yay, paru, or falls back to pacman
 - **Thread-Safe**: Uses modern C++ threading features for safe concurrent operations
-- **Comprehensive Logging**: Built-in logger for debugging and monitoring
+- **Comprehensive Logging**: [spdlog](https://github.com/gabime/spdlog)-backed logging with configurable verbosity (see [Logging](#logging) below)
 
 ## Technology Stack
 
@@ -27,7 +27,7 @@ A modern, native package manager for Arch Linux built with Qt6 and C++20. This i
 ### Build Dependencies
 
 ```bash
-sudo pacman -S base-devel cmake qt6-base qt6-svg alpm pkgconf
+sudo pacman -S base-devel cmake qt6-base qt6-svg alpm pkgconf spdlog
 ```
 
 You can optionally also have either either yay or paru if you would like to work with packages from the AUR.
@@ -62,6 +62,36 @@ Binary will be in the build directory.
 explorer
 ```
 
+## Logging
+
+Explorer logs via [spdlog](https://github.com/gabime/spdlog) to standard
+output. By default it logs at `debug` level in a development build and
+`info` level in a Release build (`-DCMAKE_BUILD_TYPE=Release`).
+
+Verbosity can be raised with `-v` flags or set explicitly with `-D <N>`:
+
+| Flag       | Level        |
+|------------|--------------|
+| *(none)*   | `debug` (dev build) / `info` (Release build) |
+| `-v`       | `debug`      |
+| `-vv`      | `trace`      |
+| `-D <N>`   | explicit level by number — `0`=trace, `1`=debug, `2`=info, `3`=warn, `4`=err, `5`=critical, `6`=off |
+
+`-D <N>` takes precedence over `-v` if both are given. Examples:
+
+```bash
+# Default verbosity
+./build/explorer
+
+# Debug-level logging
+./build/explorer -v
+
+# Most verbose (trace)
+./build/explorer -vv
+
+# Explicit level: warnings and above only
+./build/explorer -D 3
+```
 
 ## License
 
