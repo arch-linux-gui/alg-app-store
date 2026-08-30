@@ -1,14 +1,15 @@
 #include "gui/mainwindow.h"
 #include "utils/logger.h"
+#include "utils/version.h"
 #include <QApplication>
 #include <QStyleFactory>
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
-    
+
     // Set application metadata
     app.setApplicationName("Explorer");
-    app.setApplicationVersion("2.0.0");
+    app.setApplicationVersion(APP_VERSION);
     app.setOrganizationName("Arch Linux GUI");
 
     // Set application style

@@ -5,6 +5,7 @@
 #include "updates_widget.h"
 #include "settings_widget.h"
 #include "../utils/logger.h"
+#include "utils/version.h"
 #include "../core/alpm_wrapper.h"
 #include <QMenuBar>
 #include <QMenu>
@@ -120,7 +121,7 @@ void MainWindow::createMenuBar() {
         QMessageBox::about(this, "About Explorer",
             "Explorer (Beta)\n\n"
             "A modern package manager for Arch Linux\n"
-            "Version: 0.2.30\n"
+            "Version: " APP_VERSION "\n"
             "Built with Qt6 and C++20\n\n"
             "© 2025 Arka Linux GUI");
     });
