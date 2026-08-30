@@ -1,7 +1,7 @@
 #include "package_details_dialog.h"
 #include "../core/alpm_wrapper.h"
 #include "../core/package_manager.h"
-#include "../utils/logger.h"
+#include "../utils/logging.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGridLayout>
@@ -391,7 +391,7 @@ void PackageDetailsDialog::onInstall() {
         QMessageBox::Yes | QMessageBox::No);
     
     if (reply == QMessageBox::Yes) {
-        Logger::info(QString("Installing package: %1").arg(m_info.name));
+        spdlog::info("{}", (QString("Installing package: %1").arg(m_info.name)).toStdString());
         
         // Disable buttons during operation
         m_installButton->setEnabled(false);
@@ -411,7 +411,7 @@ void PackageDetailsDialog::onUninstall() {
         QMessageBox::Yes | QMessageBox::No);
     
     if (reply == QMessageBox::Yes) {
-        Logger::info(QString("Uninstalling package: %1").arg(m_info.name));
+        spdlog::info("{}", (QString("Uninstalling package: %1").arg(m_info.name)).toStdString());
         
         // Disable buttons during operation
         m_installButton->setEnabled(false);
@@ -588,7 +588,7 @@ QString PackageDetailsDialog::findDesktopFile() const {
             QStringList matches = desktopDir.entryList(QStringList() << pattern, QDir::Files);
             if (!matches.isEmpty()) {
                 QString desktopFile = desktopDir.absoluteFilePath(matches.first());
-                Logger::info(QString("Found desktop file for %1: %2").arg(m_info.name, desktopFile));
+                spdlog::info("{}", (QString("Found desktop file for %1: %2").arg(m_info.name, desktopFile)).toStdString());
                 return desktopFile;
             }
         }
@@ -632,8 +632,8 @@ QString PackageDetailsDialog::findDesktopFile() const {
                     QString desktopFile = desktopDir.absoluteFilePath(desktopFileName);
                     
                     if (verifyDesktopFile(desktopFile, nameVariants + specialVariants + significantParts)) {
-                        Logger::info(QString("Found desktop file for %1 via special match: %2")
-                                    .arg(m_info.name, desktopFile));
+                        spdlog::info("{}", (QString("Found desktop file for %1 via special match: %2")
+                                    .arg(m_info.name, desktopFile)).toStdString());
                         return desktopFile;
                     }
                 }
@@ -648,8 +648,8 @@ QString PackageDetailsDialog::findDesktopFile() const {
                 QString desktopFile = desktopDir.absoluteFilePath(desktopFileName);
                 
                 if (verifyDesktopFile(desktopFile, nameVariants + specialVariants + significantParts)) {
-                    Logger::info(QString("Found desktop file for %1 via full name match: %2")
-                                .arg(m_info.name, desktopFile));
+                    spdlog::info("{}", (QString("Found desktop file for %1 via full name match: %2")
+                                .arg(m_info.name, desktopFile)).toStdString());
                     return desktopFile;
                 }
             }
@@ -668,8 +668,8 @@ QString PackageDetailsDialog::findDesktopFile() const {
                     QString desktopFile = desktopDir.absoluteFilePath(desktopFileName);
                     
                     if (verifyDesktopFile(desktopFile, nameVariants + specialVariants + significantParts)) {
-                        Logger::info(QString("Found desktop file for %1 via word match: %2")
-                                    .arg(m_info.name, desktopFile));
+                        spdlog::info("{}", (QString("Found desktop file for %1 via word match: %2")
+                                    .arg(m_info.name, desktopFile)).toStdString());
                         return desktopFile;
                     }
                 }
@@ -677,7 +677,7 @@ QString PackageDetailsDialog::findDesktopFile() const {
         }
     }
     
-    Logger::debug(QString("No desktop file found for package: %1").arg(m_info.name));
+    spdlog::debug("{}", (QString("No desktop file found for package: %1").arg(m_info.name)).toStdString());
     return QString();
 }
 
@@ -746,12 +746,12 @@ void PackageDetailsDialog::launchApplication() {
         process->deleteLater();
         
         if (exitCode != 0 || exitStatus != QProcess::NormalExit) {
-            Logger::error(QString("Failed to launch application: %1").arg(baseName));
+            spdlog::error("{}", (QString("Failed to launch application: %1").arg(baseName)).toStdString());
             QMessageBox::warning(this, "Launch Failed",
                 QString("Failed to launch %1.\n"
                         "Exit code: %2").arg(m_info.name).arg(exitCode));
         } else {
-            Logger::info(QString("Successfully launched: %1").arg(baseName));
+            spdlog::info("{}", (QString("Successfully launched: %1").arg(baseName)).toStdString());
         }
     });
     
@@ -773,7 +773,7 @@ void PackageDetailsDialog::launchApplication() {
                 QMessageBox::warning(this, "Launch Failed",
                     "Could not find a suitable desktop file launcher.\n"
                     "Please install gtk-launch, dex, or exo-open.");
-                Logger::error("No desktop file launcher available");
+                spdlog::error("No desktop file launcher available");
             }
         }
     }

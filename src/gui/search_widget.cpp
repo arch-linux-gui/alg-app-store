@@ -3,7 +3,7 @@
 #include "package_details_dialog.h"
 #include "../core/alpm_wrapper.h"
 #include "../core/aur_helper.h"
-#include "../utils/logger.h"
+#include "../utils/logging.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -138,11 +138,11 @@ void SearchWidget::onAurSearchCompleted(const QVector<PackageInfo>& results) {
     // Apply filter
     onFilterChanged(m_filterCombo->currentIndex());
     
-    Logger::info(QString("Search completed: %1 results").arg(m_allResults.size()));
+    spdlog::info("{}", (QString("Search completed: %1 results").arg(m_allResults.size())).toStdString());
 }
 
 void SearchWidget::onAurSearchError(const QString& errorMsg) {
-    Logger::warning(QString("AUR search failed: %1").arg(errorMsg));
+    spdlog::warn("{}", (QString("AUR search failed: %1").arg(errorMsg)).toStdString());
 
     m_searchButton->setEnabled(true);
     m_searchButton->setText("Search");
@@ -210,7 +210,7 @@ void SearchWidget::clearResults() {
 }
 
 void SearchWidget::onPackageClicked(const PackageInfo& info) {
-    Logger::info(QString("Package clicked: %1").arg(info.name));
+    spdlog::info("{}", (QString("Package clicked: %1").arg(info.name)).toStdString());
     
     PackageInfo fullInfo = info;
     
@@ -225,7 +225,7 @@ void SearchWidget::onPackageClicked(const PackageInfo& info) {
         });
         
         connect(aurHelper, &AurHelper::error, [&](const QString& errorMsg) {
-            Logger::warning(QString("Failed to fetch AUR details for %1: %2").arg(info.name, errorMsg));
+            spdlog::warn("{}", (QString("Failed to fetch AUR details for %1: %2").arg(info.name, errorMsg)).toStdString());
             loop.quit();
         });
         
@@ -272,13 +272,13 @@ void SearchWidget::updateRepositoryList(bool multilibEnabled, bool chaoticAurEna
         } else {
             m_filterCombo->addItem("Multilib", "multilib");
         }
-        Logger::info("Added multilib repository to search filter");
+        spdlog::info("Added multilib repository to search filter");
     } else if (!multilibEnabled && multilibExists) {
         // Remove multilib from the dropdown
         int multilibIndex = m_filterCombo->findData("multilib");
         if (multilibIndex != -1) {
             m_filterCombo->removeItem(multilibIndex);
-            Logger::info("Removed multilib repository from search filter");
+            spdlog::info("Removed multilib repository from search filter");
         }
     }
     
@@ -291,13 +291,13 @@ void SearchWidget::updateRepositoryList(bool multilibEnabled, bool chaoticAurEna
         } else {
             m_filterCombo->addItem("Chaotic-AUR", "chaotic-aur");
         }
-        Logger::info("Added chaotic-aur repository to search filter");
+        spdlog::info("Added chaotic-aur repository to search filter");
     } else if (!chaoticAurEnabled && chaoticAurExists) {
         // Remove chaotic-aur from the dropdown
         int chaoticAurIndex = m_filterCombo->findData("chaotic-aur");
         if (chaoticAurIndex != -1) {
             m_filterCombo->removeItem(chaoticAurIndex);
-            Logger::info("Removed chaotic-aur repository from search filter");
+            spdlog::info("Removed chaotic-aur repository from search filter");
         }
     }
     

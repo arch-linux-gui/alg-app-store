@@ -3,7 +3,7 @@
 #include "package_details_dialog.h"
 #include "../core/alpm_wrapper.h"
 #include "../core/aur_helper.h"
-#include "../utils/logger.h"
+#include "../utils/logging.h"
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QEventLoop>
@@ -73,18 +73,18 @@ void HomeWidget::loadFeaturedPackages() {
             pkg.description = repoInfo.description;
             
             if (pkg.repository.toLower() != "aur") {
-                Logger::debug(QString("Package %1 found in %2 repository with version %3")
-                            .arg(pkg.name, pkg.repository, pkg.version));
+                spdlog::debug("{}", (QString("Package %1 found in %2 repository with version %3")
+                            .arg(pkg.name, pkg.repository, pkg.version)).toStdString());
             }
         } else if (pkg.repository.toLower() == "aur") {
             // Package not found in official repos (including chaotic-aur)
             // Default to AUR helper (yay/paru) since chaotic-aur is not enabled or doesn't have this package
             pkg.repository = "aur";
-            Logger::debug(QString("Package %1 not found in enabled repositories, defaulting to AUR helper").arg(pkg.name));
+            spdlog::debug("{}", (QString("Package %1 not found in enabled repositories, defaulting to AUR helper").arg(pkg.name)).toStdString());
         }
     }
     
-    Logger::info(QString("Loaded %1 featured packages").arg(m_featuredPackages.size()));
+    spdlog::info("{}", (QString("Loaded %1 featured packages").arg(m_featuredPackages.size())).toStdString());
 }
 
 void HomeWidget::createPackageCards() {
@@ -121,7 +121,7 @@ void HomeWidget::onUpdateTimer() {
 }
 
 void HomeWidget::onPackageClicked(const PackageInfo& info) {
-    Logger::info(QString("Package clicked: %1").arg(info.name));
+    spdlog::info("{}", (QString("Package clicked: %1").arg(info.name)).toStdString());
     
     // Fetch full package details including dependencies
     PackageInfo fullInfo;
@@ -137,7 +137,7 @@ void HomeWidget::onPackageClicked(const PackageInfo& info) {
         });
         
         connect(&aurHelper, &AurHelper::error, [&fullInfo, &info, &loop](const QString& error) {
-            Logger::warning(QString("Failed to fetch AUR package info: %1").arg(error));
+            spdlog::warn("{}", (QString("Failed to fetch AUR package info: %1").arg(error)).toStdString());
             fullInfo = info; // Fallback to basic info
             loop.quit();
         });

@@ -1,5 +1,5 @@
 #include "settings_widget.h"
-#include "../utils/logger.h"
+#include "../utils/logging.h"
 #include "../core/alpm_wrapper.h"
 #include "../core/package_manager.h"
 #include <QVBoxLayout>
@@ -18,7 +18,7 @@ SettingsWidget::SettingsWidget(QWidget* parent)
     setupUi();
     loadCurrentSettings();
     
-    Logger::info("SettingsWidget created successfully");
+    spdlog::info("SettingsWidget created successfully");
 }
 
 void SettingsWidget::setupUi() {
@@ -341,15 +341,15 @@ void SettingsWidget::loadCurrentSettings() {
     m_chaoticAurCheckbox->setChecked(chaoticAurEnabled);
     m_originalChaoticAurState = chaoticAurEnabled;
     
-    Logger::info(QString("Loaded settings: multilib=%1, chaotic-aur=%2")
+    spdlog::info("{}", (QString("Loaded settings: multilib=%1, chaotic-aur=%2")
                  .arg(multilibEnabled ? "enabled" : "disabled")
-                 .arg(chaoticAurEnabled ? "enabled" : "disabled"));
+                 .arg(chaoticAurEnabled ? "enabled" : "disabled")).toStdString());
 }
 
 bool SettingsWidget::isMultilibEnabledInPacmanConf() const {
     QFile file("/etc/pacman.conf");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        Logger::error("Failed to open /etc/pacman.conf for reading");
+        spdlog::error("Failed to open /etc/pacman.conf for reading");
         return false;
     }
     
@@ -387,7 +387,7 @@ bool SettingsWidget::isMultilibEnabledInPacmanConf() const {
 bool SettingsWidget::isChaoticAurEnabledInPacmanConf() const {
     QFile file("/etc/pacman.conf");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        Logger::error("Failed to open /etc/pacman.conf for reading");
+        spdlog::error("Failed to open /etc/pacman.conf for reading");
         return false;
     }
     
@@ -425,7 +425,7 @@ bool SettingsWidget::isChaoticAurEnabledInPacmanConf() const {
 bool SettingsWidget::enableMultilibInPacmanConf() {
     QFile file("/etc/pacman.conf");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        Logger::error("Failed to open /etc/pacman.conf for reading");
+        spdlog::error("Failed to open /etc/pacman.conf for reading");
         return false;
     }
     
@@ -457,7 +457,7 @@ bool SettingsWidget::enableMultilibInPacmanConf() {
     QString tempFile = "/tmp/pacman.conf.tmp";
     QFile temp(tempFile);
     if (!temp.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        Logger::error("Failed to create temporary file");
+        spdlog::error("Failed to create temporary file");
         return false;
     }
     
@@ -473,20 +473,20 @@ bool SettingsWidget::enableMultilibInPacmanConf() {
     process.waitForFinished(30000); // 30 second timeout
     
     if (process.exitCode() != 0) {
-        Logger::error("Failed to update pacman.conf with elevated privileges");
+        spdlog::error("Failed to update pacman.conf with elevated privileges");
         QFile::remove(tempFile);
         return false;
     }
     
     QFile::remove(tempFile);
-    Logger::info("Successfully enabled multilib repository");
+    spdlog::info("Successfully enabled multilib repository");
     return true;
 }
 
 bool SettingsWidget::disableMultilibInPacmanConf() {
     QFile file("/etc/pacman.conf");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        Logger::error("Failed to open /etc/pacman.conf for reading");
+        spdlog::error("Failed to open /etc/pacman.conf for reading");
         return false;
     }
     
@@ -524,7 +524,7 @@ bool SettingsWidget::disableMultilibInPacmanConf() {
     QString tempFile = "/tmp/pacman.conf.tmp";
     QFile temp(tempFile);
     if (!temp.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        Logger::error("Failed to create temporary file");
+        spdlog::error("Failed to create temporary file");
         return false;
     }
     
@@ -540,20 +540,20 @@ bool SettingsWidget::disableMultilibInPacmanConf() {
     process.waitForFinished(30000); // 30 second timeout
     
     if (process.exitCode() != 0) {
-        Logger::error("Failed to update pacman.conf with elevated privileges");
+        spdlog::error("Failed to update pacman.conf with elevated privileges");
         QFile::remove(tempFile);
         return false;
     }
     
     QFile::remove(tempFile);
-    Logger::info("Successfully disabled multilib repository");
+    spdlog::info("Successfully disabled multilib repository");
     return true;
 }
 
 bool SettingsWidget::enableChaoticAurInPacmanConf() {
     QFile file("/etc/pacman.conf");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        Logger::error("Failed to open /etc/pacman.conf for reading");
+        spdlog::error("Failed to open /etc/pacman.conf for reading");
         return false;
     }
     
@@ -608,7 +608,7 @@ bool SettingsWidget::enableChaoticAurInPacmanConf() {
     QString tempFile = "/tmp/pacman.conf.tmp";
     QFile temp(tempFile);
     if (!temp.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        Logger::error("Failed to create temporary file");
+        spdlog::error("Failed to create temporary file");
         return false;
     }
     
@@ -624,20 +624,20 @@ bool SettingsWidget::enableChaoticAurInPacmanConf() {
     process.waitForFinished(30000); // 30 second timeout
     
     if (process.exitCode() != 0) {
-        Logger::error("Failed to update pacman.conf with elevated privileges");
+        spdlog::error("Failed to update pacman.conf with elevated privileges");
         QFile::remove(tempFile);
         return false;
     }
     
     QFile::remove(tempFile);
-    Logger::info("Successfully enabled chaotic-aur repository");
+    spdlog::info("Successfully enabled chaotic-aur repository");
     return true;
 }
 
 bool SettingsWidget::disableChaoticAurInPacmanConf() {
     QFile file("/etc/pacman.conf");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        Logger::error("Failed to open /etc/pacman.conf for reading");
+        spdlog::error("Failed to open /etc/pacman.conf for reading");
         return false;
     }
     
@@ -680,7 +680,7 @@ bool SettingsWidget::disableChaoticAurInPacmanConf() {
     QString tempFile = "/tmp/pacman.conf.tmp";
     QFile temp(tempFile);
     if (!temp.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        Logger::error("Failed to create temporary file");
+        spdlog::error("Failed to create temporary file");
         return false;
     }
     
@@ -696,13 +696,13 @@ bool SettingsWidget::disableChaoticAurInPacmanConf() {
     process.waitForFinished(30000); // 30 second timeout
     
     if (process.exitCode() != 0) {
-        Logger::error("Failed to update pacman.conf with elevated privileges");
+        spdlog::error("Failed to update pacman.conf with elevated privileges");
         QFile::remove(tempFile);
         return false;
     }
     
     QFile::remove(tempFile);
-    Logger::info("Successfully disabled chaotic-aur repository");
+    spdlog::info("Successfully disabled chaotic-aur repository");
     return true;
 }
 
@@ -829,7 +829,7 @@ void SettingsWidget::onApplyClicked() {
                 if (process.exitCode() == 0) {
                     m_statusLabel->setText("Package databases synced successfully!");
                     m_statusLabel->setProperty("class", "status-msg-success");
-				            Logger::info("Package databases synced after repository change");
+				            spdlog::info("Package databases synced after repository change");
                     
                     // Refresh ALPM databases to pick up the new repository
                     AlpmWrapper::instance().refreshDatabases();
@@ -907,7 +907,7 @@ void SettingsWidget::onRemoveLockClicked() {
             m_statusLabel->style()->unpolish(m_statusLabel);
             m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
-            Logger::info("Pacman lock file removed successfully");
+            spdlog::info("Pacman lock file removed successfully");
             
             QMessageBox::information(this, "Success",
                 "The pacman lock file has been removed successfully.\n"
@@ -918,7 +918,7 @@ void SettingsWidget::onRemoveLockClicked() {
             m_statusLabel->style()->unpolish(m_statusLabel);
             m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
-            Logger::error("Failed to remove pacman lock file");
+            spdlog::error("Failed to remove pacman lock file");
             
             QMessageBox::critical(this, "Error",
                 "Failed to remove the lock file.\n"
@@ -973,12 +973,12 @@ void SettingsWidget::onSetupChaoticClicked() {
             this, [this, process](int exitCode, QProcess::ExitStatus exitStatus) {
         QString output = process->readAll();
         
-        Logger::info(QString("Chaotic-AUR setup exit code: %1, status: %2")
+        spdlog::info("{}", (QString("Chaotic-AUR setup exit code: %1, status: %2")
                     .arg(exitCode)
-                    .arg(exitStatus == QProcess::NormalExit ? "Normal" : "Crashed"));
+                    .arg(exitStatus == QProcess::NormalExit ? "Normal" : "Crashed")).toStdString());
         
         if (!output.isEmpty()) {
-            Logger::debug(QString("Chaotic-AUR setup output:\n%1").arg(output));
+            spdlog::debug("{}", (QString("Chaotic-AUR setup output:\n%1").arg(output)).toStdString());
         }
         
         process->deleteLater();
@@ -990,7 +990,7 @@ void SettingsWidget::onSetupChaoticClicked() {
             m_statusLabel->style()->unpolish(m_statusLabel);
             m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
-						Logger::info("Chaotic-AUR packages installed successfully");
+						spdlog::info("Chaotic-AUR packages installed successfully");
             
             // Refresh the chaotic-aur checkbox status
             loadCurrentSettings();
@@ -1005,7 +1005,7 @@ void SettingsWidget::onSetupChaoticClicked() {
             m_statusLabel->style()->unpolish(m_statusLabel);
             m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
-            Logger::error(QString("Failed to install Chaotic-AUR packages. Exit code: %1").arg(exitCode));
+            spdlog::error("{}", (QString("Failed to install Chaotic-AUR packages. Exit code: %1").arg(exitCode)).toStdString());
             
             // Show output in error message if available
             QString errorDetails = "Possible reasons:\n"
@@ -1064,7 +1064,7 @@ void SettingsWidget::onRemoveChaoticClicked() {
             m_statusLabel->style()->unpolish(m_statusLabel);
             m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
-            Logger::info("Chaotic-AUR packages removed successfully");
+            spdlog::info("Chaotic-AUR packages removed successfully");
             
             // Refresh the chaotic-aur checkbox status
             loadCurrentSettings();
@@ -1079,7 +1079,7 @@ void SettingsWidget::onRemoveChaoticClicked() {
             m_statusLabel->style()->unpolish(m_statusLabel);
             m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
-            Logger::error("Failed to remove Chaotic-AUR packages");
+            spdlog::error("Failed to remove Chaotic-AUR packages");
             
             QMessageBox::critical(this, "Error",
                 "Failed to remove Chaotic-AUR packages.\n"
@@ -1128,7 +1128,7 @@ void SettingsWidget::onSyncReposClicked() {
             m_statusLabel->style()->unpolish(m_statusLabel);
             m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
-            Logger::info("Repositories synchronized successfully");
+            spdlog::info("Repositories synchronized successfully");
             
             // Refresh ALPM databases
             AlpmWrapper::instance().refreshDatabases();
@@ -1142,7 +1142,7 @@ void SettingsWidget::onSyncReposClicked() {
             m_statusLabel->style()->unpolish(m_statusLabel);
             m_statusLabel->style()->polish(m_statusLabel);
             m_statusLabel->show();
-            Logger::error("Failed to synchronize repositories");
+            spdlog::error("Failed to synchronize repositories");
             
             QMessageBox::critical(this, "Error",
                 "Failed to synchronize package databases.\n"
@@ -1194,7 +1194,7 @@ void SettingsWidget::onCancelProcessClicked() {
     m_statusLabel->style()->polish(m_statusLabel);
     m_statusLabel->show();
 
-    Logger::info("User killed running package operation from settings");
+    spdlog::info("User killed running package operation from settings");
     
     QMessageBox::information(this, "Process Killed",
         "The running package operation has been killed.\n\n"

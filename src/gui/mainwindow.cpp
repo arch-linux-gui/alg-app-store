@@ -4,7 +4,7 @@
 #include "installed_widget.h"
 #include "updates_widget.h"
 #include "settings_widget.h"
-#include "../utils/logger.h"
+#include "../utils/logging.h"
 #include "utils/version.h"
 #include "../core/alpm_wrapper.h"
 #include <QMenuBar>
@@ -22,18 +22,18 @@ MainWindow::MainWindow(QWidget* parent)
     if (!AlpmWrapper::instance().initialize()) {
         QMessageBox::critical(this, "Error", 
             "Failed to initialize package manager. Please check your system configuration.");
-        Logger::error("Failed to initialize ALPM in MainWindow");
+        spdlog::error("Failed to initialize ALPM in MainWindow");
     }
     
     setupUi();
     loadStyleSheet();
     
-    Logger::info("MainWindow created successfully");
+    spdlog::info("MainWindow created successfully");
 }
 
 MainWindow::~MainWindow() {
     AlpmWrapper::instance().release();
-    Logger::info("MainWindow destroyed");
+    spdlog::info("MainWindow destroyed");
 }
 
 void MainWindow::setupUi() {
@@ -146,14 +146,14 @@ void MainWindow::loadStyleSheet() {
             file.close();
             anyLoaded = true;
         } else {
-            Logger::warning(QString("Could not load style module: %1").arg(path));
+            spdlog::warn("{}", (QString("Could not load style module: %1").arg(path)).toStdString());
         }
     }
 
     if (anyLoaded) {
         qApp->setStyleSheet(combinedStyleSheet);
-        Logger::info("Modular stylesheets loaded and combined successfully from resources.");
+        spdlog::info("Modular stylesheets loaded and combined successfully from resources.");
     } else {
-        Logger::error("Failed to load any stylesheet modules from resources!");
+        spdlog::error("Failed to load any stylesheet modules from resources!");
     }
 }

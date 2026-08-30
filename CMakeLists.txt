@@ -21,6 +21,8 @@ find_package(Qt6 REQUIRED COMPONENTS
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(ALPM REQUIRED libalpm)
 
+find_package(spdlog REQUIRED)
+
 add_subdirectory(src/utils)
 add_subdirectory(src/core)
 add_subdirectory(src/gui)

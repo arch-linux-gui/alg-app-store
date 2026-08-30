@@ -2,7 +2,7 @@
 #include "../core/alpm_wrapper.h"
 #include "../core/aur_helper.h"
 #include "../core/package_manager.h"
-#include "../utils/logger.h"
+#include "../utils/logging.h"
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QMessageBox>
@@ -249,7 +249,7 @@ void UpdatesWidget::checkForUpdates() {
                 }
             }
             
-            Logger::info(QString("Found %1 updates").arg(updates.size()));
+            spdlog::info("{}", (QString("Found %1 updates").arg(updates.size())).toStdString());
         }, Qt::QueuedConnection);
     });
 }

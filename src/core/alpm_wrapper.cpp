@@ -1,5 +1,5 @@
 #include "alpm_wrapper.h"
-#include "../utils/logger.h"
+#include "../utils/logging.h"
 #include <QDateTime>
 #include <QFile>
 #include <QTextStream>
@@ -29,8 +29,8 @@ bool AlpmWrapper::initialize() {
     m_handle = alpm_initialize("/", "/var/lib/pacman", &err);
     
     if (!m_handle) {
-        Logger::error(QString("Failed to initialize ALPM: %1")
-                     .arg(alpm_strerror(err)));
+        spdlog::error("{}", (QString("Failed to initialize ALPM: %1")
+                     .arg(alpm_strerror(err))).toStdString());
         return false;
     }
     
@@ -41,16 +41,16 @@ bool AlpmWrapper::initialize() {
                                              repo.toStdString().c_str(),
                                              ALPM_SIG_USE_DEFAULT);
         if (!db) {
-            Logger::warning(QString("Failed to register sync db: %1").arg(repo));
+            spdlog::warn("{}", (QString("Failed to register sync db: %1").arg(repo)).toStdString());
         } else {
-            Logger::info(QString("Registered sync db: %1").arg(repo));
+            spdlog::info("{}", (QString("Registered sync db: %1").arg(repo)).toStdString());
         }
     }
     
     m_syncDbs = alpm_get_syncdbs(m_handle);
     m_initialized = true;
     
-    Logger::info("ALPM initialized successfully");
+    spdlog::info("ALPM initialized successfully");
     return true;
 }
 
@@ -62,7 +62,7 @@ void AlpmWrapper::release() {
         m_handle = nullptr;
         m_syncDbs = nullptr;
         m_initialized = false;
-        Logger::info("ALPM released");
+        spdlog::info("ALPM released");
     }
 }
 
@@ -70,7 +70,7 @@ QVector<PackageInfo> AlpmWrapper::searchPackages(const QString& query) {
     std::lock_guard<std::mutex> lock(m_mutex);
     
     if (!m_initialized) {
-        Logger::error("ALPM not initialized");
+        spdlog::error("ALPM not initialized");
         return {};
     }
     
@@ -118,7 +118,7 @@ QVector<PackageInfo> AlpmWrapper::getInstalledPackages() {
     std::lock_guard<std::mutex> lock(m_mutex);
     
     if (!m_initialized) {
-        Logger::error("ALPM not initialized");
+        spdlog::error("ALPM not initialized");
         return {};
     }
     
@@ -126,7 +126,7 @@ QVector<PackageInfo> AlpmWrapper::getInstalledPackages() {
     alpm_db_t* localDb = alpm_get_localdb(m_handle);
     
     if (!localDb) {
-        Logger::error("Failed to get local database");
+        spdlog::error("Failed to get local database");
         return {};
     }
     
@@ -150,7 +150,7 @@ QVector<PackageInfo> AlpmWrapper::getInstalledPackages() {
         packages.push_back(std::move(info));
     }
     
-    Logger::info(QString("Found %1 installed packages").arg(packages.size()));
+    spdlog::info("{}", (QString("Found %1 installed packages").arg(packages.size())).toStdString());
     return packages;
 }
 
@@ -228,7 +228,7 @@ QVector<UpdateInfo> AlpmWrapper::getAvailableUpdates() {
     QVector<UpdateInfo> updates;
     
     if (!m_initialized) {
-        Logger::error("ALPM not initialized");
+        spdlog::error("ALPM not initialized");
         return updates;
     }
     
@@ -267,7 +267,7 @@ QVector<UpdateInfo> AlpmWrapper::getAvailableUpdates() {
         }
     }
     
-    Logger::info(QString("Found %1 available updates").arg(updates.size()));
+    spdlog::info("{}", (QString("Found %1 available updates").arg(updates.size())).toStdString());
     return updates;
 }
 
@@ -288,7 +288,7 @@ QStringList AlpmWrapper::getEnabledRepositories() const {
     // Read /etc/pacman.conf to find enabled repositories
     QFile file("/etc/pacman.conf");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        Logger::error("Failed to open /etc/pacman.conf");
+        spdlog::error("Failed to open /etc/pacman.conf");
         // Return default repositories
         return {"core", "extra"};
     }
@@ -319,7 +319,7 @@ QStringList AlpmWrapper::getEnabledRepositories() const {
         repos.insert(1, "extra");
     }
     
-    Logger::info(QString("Enabled repositories: %1").arg(repos.join(", ")));
+    spdlog::info("{}", (QString("Enabled repositories: %1").arg(repos.join(", "))).toStdString());
     return repos;
 }
 
@@ -327,7 +327,7 @@ void AlpmWrapper::refreshDatabases() {
     std::lock_guard<std::mutex> lock(m_mutex);
     
     if (!m_initialized) {
-        Logger::error("ALPM not initialized");
+        spdlog::error("ALPM not initialized");
         return;
     }
     
@@ -344,5 +344,5 @@ void AlpmWrapper::refreshDatabases() {
     initialize();
     m_mutex.lock();
     
-    Logger::info("ALPM databases refreshed");
+    spdlog::info("ALPM databases refreshed");
 }

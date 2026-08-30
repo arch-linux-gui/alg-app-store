@@ -1,5 +1,5 @@
 #include "aur_helper.h"
-#include "../utils/logger.h"
+#include "../utils/logging.h"
 #include <QNetworkRequest>
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -17,7 +17,7 @@ AurHelper::AurHelper(QObject* parent)
 AurHelper::~AurHelper() = default;
 
 void AurHelper::searchPackages(const QString& query) {
-    Logger::debug(QString("Searching AUR for: %1").arg(query));
+    spdlog::debug("{}", (QString("Searching AUR for: %1").arg(query)).toStdString());
     
     QUrl url("https://aur.archlinux.org/rpc/");
     QUrlQuery urlQuery;
@@ -39,7 +39,7 @@ void AurHelper::onSearchFinished() {
     reply->deleteLater();
     
     if (reply->error() != QNetworkReply::NoError) {
-        Logger::error(QString("AUR search error: %1").arg(reply->errorString()));
+        spdlog::error("{}", (QString("AUR search error: %1").arg(reply->errorString())).toStdString());
         emit error(reply->errorString());
         return;
     }
@@ -48,7 +48,7 @@ void AurHelper::onSearchFinished() {
     QJsonDocument doc = QJsonDocument::fromJson(data);
     
     if (!doc.isObject()) {
-        Logger::error("Invalid AUR response format");
+        spdlog::error("Invalid AUR response format");
         emit error("Invalid response from AUR");
         return;
     }
@@ -61,12 +61,12 @@ void AurHelper::onSearchFinished() {
         packages.push_back(parseAurPackage(result.toObject()));
     }
     
-    Logger::info(QString("Found %1 AUR packages").arg(packages.size()));
+    spdlog::info("{}", (QString("Found %1 AUR packages").arg(packages.size())).toStdString());
     emit searchCompleted(packages);
 }
 
 void AurHelper::getPackageInfo(const QString& packageName) {
-    Logger::debug(QString("Getting AUR package info for: %1").arg(packageName));
+    spdlog::debug("{}", (QString("Getting AUR package info for: %1").arg(packageName)).toStdString());
     
     QUrl url("https://aur.archlinux.org/rpc/");
     QUrlQuery urlQuery;
@@ -88,7 +88,7 @@ void AurHelper::onPackageInfoFinished() {
     reply->deleteLater();
     
     if (reply->error() != QNetworkReply::NoError) {
-        Logger::error(QString("AUR package info error: %1").arg(reply->errorString()));
+        spdlog::error("{}", (QString("AUR package info error: %1").arg(reply->errorString())).toStdString());
         emit error(reply->errorString());
         return;
     }
@@ -150,7 +150,7 @@ QVector<UpdateInfo> AurHelper::checkAurUpdates() {
     process.waitForFinished();
     
     if (process.exitCode() != 0) {
-        Logger::warning("Failed to get list of foreign packages");
+        spdlog::warn("Failed to get list of foreign packages");
         return updates;
     }
     

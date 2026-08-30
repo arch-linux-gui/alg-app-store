@@ -2,7 +2,7 @@
 #include "package_card.h"
 #include "package_details_dialog.h"
 #include "../core/alpm_wrapper.h"
-#include "../utils/logger.h"
+#include "../utils/logging.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -94,7 +94,7 @@ void InstalledWidget::loadInstalledPackages() {
             
             filterPackages(m_filterInput->text());
             
-            Logger::info(QString("Loaded %1 installed packages").arg(packages.size()));
+            spdlog::info("{}", (QString("Loaded %1 installed packages").arg(packages.size())).toStdString());
         }, Qt::QueuedConnection);
     });
 }
@@ -171,7 +171,7 @@ void InstalledWidget::onFilterTextChanged(const QString& text) {
 }
 
 void InstalledWidget::onPackageClicked(const PackageInfo& info) {
-    Logger::info(QString("Package clicked: %1").arg(info.name));
+    spdlog::info("{}", (QString("Package clicked: %1").arg(info.name)).toStdString());
     
     auto* dialog = new PackageDetailsDialog(info, this);
     if(dialog->exec() == QDialog::Accepted) {

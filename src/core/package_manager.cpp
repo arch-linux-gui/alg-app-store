@@ -1,5 +1,5 @@
 #include "package_manager.h"
-#include "../utils/logger.h"
+#include "../utils/logging.h"
 #include <QStandardPaths>
 #include <QFile>
 
@@ -36,7 +36,7 @@ void PackageManager::detectHelper() {
     QString yayPath = QStandardPaths::findExecutable("yay");
     if (!yayPath.isEmpty()) {
         m_helper = Helper::Yay;
-        Logger::info("Using yay as package helper");
+        spdlog::info("Using yay as package helper");
         return;
     }
     
@@ -44,13 +44,13 @@ void PackageManager::detectHelper() {
     // QString paruPath = QStandardPaths::findExecutable("paru");
     // if (!paruPath.isEmpty()) {
     //     m_helper = Helper::Paru;
-    //     Logger::info("Using paru as package helper");
+    //     spdlog::info("Using paru as package helper");
     //     return;
     // }
     
     // Default to pacman
     m_helper = Helper::Pacman;
-    Logger::info("Using pacman as package helper");
+    spdlog::info("Using pacman as package helper");
 }
 
 QString PackageManager::getHelperName() const {
@@ -64,7 +64,7 @@ QString PackageManager::getHelperName() const {
 void PackageManager::installPackage(const QString& packageName, const QString& repository) {
     std::lock_guard<std::mutex> lock(m_mutex);
     
-    Logger::info(QString("Installing package: %1 from %2").arg(packageName, repository.isEmpty() ? "default" : repository));
+    spdlog::info("{}", (QString("Installing package: %1 from %2").arg(packageName, repository.isEmpty() ? "default" : repository)).toStdString());
     emit operationStarted(QString("Installing %1...").arg(packageName));
     
     // Determine if this is an AUR package (not from official repos or chaotic-aur)
@@ -88,7 +88,7 @@ void PackageManager::installPackage(const QString& packageName, const QString& r
 void PackageManager::uninstallPackage(const QString& packageName, const QString& repository) {
     std::lock_guard<std::mutex> lock(m_mutex);
     
-    Logger::info(QString("Uninstalling package: %1 from %2").arg(packageName, repository.isEmpty() ? "default" : repository));
+    spdlog::info("{}", (QString("Uninstalling package: %1 from %2").arg(packageName, repository.isEmpty() ? "default" : repository)).toStdString());
     emit operationStarted(QString("Uninstalling %1...").arg(packageName));
     
     // Uninstall always needs root (even for AUR packages, they're in the system db once installed)
@@ -100,7 +100,7 @@ void PackageManager::uninstallPackage(const QString& packageName, const QString&
 void PackageManager::updatePackage(const QString& packageName, const QString& repository) {
     std::lock_guard<std::mutex> lock(m_mutex);
     
-    Logger::info(QString("Updating package: %1 from %2").arg(packageName, repository.isEmpty() ? "default" : repository));
+    spdlog::info("{}", (QString("Updating package: %1 from %2").arg(packageName, repository.isEmpty() ? "default" : repository)).toStdString());
     emit operationStarted(QString("Updating %1...").arg(packageName));
     
     // Determine if this is an AUR package (not from official repos or chaotic-aur)
@@ -123,7 +123,7 @@ void PackageManager::updatePackage(const QString& packageName, const QString& re
 void PackageManager::updateAllPackages() {
     std::lock_guard<std::mutex> lock(m_mutex);
     
-    Logger::info("Updating all packages");
+    spdlog::info("Updating all packages");
     emit operationStarted("Updating all packages...");
     
     QString command = QString("pkexec %1 -Syu --noconfirm")
@@ -134,7 +134,7 @@ void PackageManager::updateAllPackages() {
 
 void PackageManager::executeCommand(const QString& command, const QStringList& args) {
     if (m_process->state() != QProcess::NotRunning) {
-        Logger::warning("Another operation is already running");
+        spdlog::warn("Another operation is already running");
         emit operationError("Another operation is already in progress");
         return;
     }
@@ -142,7 +142,7 @@ void PackageManager::executeCommand(const QString& command, const QStringList& a
     // Merge stdout and stderr so we capture all output
     m_process->setProcessChannelMode(QProcess::MergedChannels);
     
-    Logger::debug(QString("Executing: %1 %2").arg(command, args.join(" ")));
+    spdlog::debug("{}", (QString("Executing: %1 %2").arg(command, args.join(" "))).toStdString());
     
     // Emit the actual command being executed to the UI for visibility
     QString fullCommand = command + " " + args.join(" ");
@@ -153,7 +153,7 @@ void PackageManager::executeCommand(const QString& command, const QStringList& a
     // Check if process started successfully
     if (!m_process->waitForStarted(3000)) {
         QString error = QString("Failed to start process: %1").arg(m_process->errorString());
-        Logger::error(error);
+        spdlog::error("{}", (error).toStdString());
         emit operationError(error);
     }
 }
@@ -163,18 +163,18 @@ void PackageManager::onProcessFinished(int exitCode, QProcess::ExitStatus exitSt
     QString error = m_process->readAllStandardError();
     
     if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-        Logger::info("Operation completed successfully");
+        spdlog::info("Operation completed successfully");
         emit operationCompleted(true, "Operation completed successfully");
     } else {
-        Logger::error(QString("Operation failed with exit code %1").arg(exitCode));
-        Logger::error(QString("Error output: %1").arg(error));
+        spdlog::error("{}", (QString("Operation failed with exit code %1").arg(exitCode)).toStdString());
+        spdlog::error("{}", (QString("Error output: %1").arg(error)).toStdString());
         emit operationCompleted(false, QString("Operation failed: %1").arg(error));
     }
 }
 
 void PackageManager::onProcessError(QProcess::ProcessError /*error*/) {
     QString errorString = m_process->errorString();
-    Logger::error(QString("Process error: %1").arg(errorString));
+    spdlog::error("{}", (QString("Process error: %1").arg(errorString)).toStdString());
     emit operationError(errorString);
 }
 
@@ -182,14 +182,14 @@ void PackageManager::onProcessOutput() {
     // Since we merged channels, only read stdout (which includes stderr)
     QString output = m_process->readAll();
     if (!output.isEmpty()) {
-        Logger::debug(QString("Process output: %1").arg(output.trimmed()));
+        spdlog::debug("{}", (QString("Process output: %1").arg(output.trimmed())).toStdString());
         emit operationOutput(output);
     }
 }
 
 void PackageManager::cancelRunningOperation() {
     if (m_process && m_process->state() != QProcess::NotRunning) {
-        Logger::warning("Killing running operation...");
+        spdlog::warn("Killing running operation...");
         emit operationOutput("\n>>> Operation cancelled by user <<<\n");
         
         // When using pkexec, we need to kill the actual pacman/yay/paru process
@@ -205,7 +205,7 @@ void PackageManager::cancelRunningOperation() {
         // Wait up to 3 seconds for graceful termination
         if (!m_process->waitForFinished(3000)) {
             // Force kill if still running
-            Logger::warning("Process did not terminate gracefully, forcing kill...");
+            spdlog::warn("Process did not terminate gracefully, forcing kill...");
             killProcess.start("pkexec", QStringList() << "bash" << "-c" 
                              << "pkill -KILL pacman; pkill -KILL yay; pkill -KILL paru");
             killProcess.waitForFinished(2000);
@@ -215,9 +215,9 @@ void PackageManager::cancelRunningOperation() {
         }
         
         emit operationCompleted(false, "Operation cancelled by user");
-        Logger::info("Operation cancelled successfully");
+        spdlog::info("Operation cancelled successfully");
     } else {
-        Logger::warning("No operation is currently running");
+        spdlog::warn("No operation is currently running");
     }
 }
 

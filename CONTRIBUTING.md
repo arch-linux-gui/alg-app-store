@@ -69,8 +69,10 @@ Contributions are welcome and appreciated! To contribute:
 │   │   └── CMakeLists.txt
 │   ├── main.cpp
 │   └── utils
-│       ├── logger.h
+│       ├── logging.cpp
+│       ├── logging.h
 │       ├── types.h
+│       ├── version.h.in
 │       └── CMakeLists.txt
 ├── stylesheet.qss
 └── TODO.md
@@ -134,14 +136,33 @@ Used for `AlpmWrapper` and `PackageManager` to ensure:
 
 ## Logging
 
-The application includes a comprehensive logging system:
+Logging is done with [spdlog](https://github.com/gabime/spdlog), called
+directly at each call site:
 
 ```cpp
-Logger::info("Information message");
-Logger::warning("Warning message");
-Logger::error("Error message");
-Logger::debug("Debug message");
+spdlog::info("Informational message");
+spdlog::warn("Warning message");
+spdlog::error("Error message");
+spdlog::debug("Debug message");
 ```
+
+Dynamic (non-literal) messages must be passed as a format argument, not as
+the format string itself, so content containing `{`/`}` (package output,
+JSON, file contents, etc.) can't be misparsed as a format placeholder:
+
+```cpp
+spdlog::info("{}", someQString.toStdString());
+```
+
+`Log::init(argc, argv)` (in `src/utils/logging.h`) is called at the very
+start of `main()`, before `QApplication` is constructed. It parses and
+strips verbosity flags from argv and sets the logger's level:
+
+- No flags: `debug` in dev builds, `info` in Release builds (`NDEBUG`)
+- `-v`: `debug`
+- `-vv` (or more `v`s): `trace`
+- `-D <N>`: explicit `spdlog::level::level_enum` value (`0`=trace .. `6`=off),
+  overriding `-v` when both are given
 
 Logs are output to standard output and can be redirected for persistent logging.
 
