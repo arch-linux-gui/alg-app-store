@@ -4,9 +4,11 @@
 #include <string>
 #include <vector>
 
-namespace {
+namespace
+{
 
-spdlog::level::level_enum defaultLevel() {
+spdlog::level::level_enum defaultLevel()
+{
 #ifndef NDEBUG
     return spdlog::level::debug;
 #else
@@ -14,32 +16,38 @@ spdlog::level::level_enum defaultLevel() {
 #endif
 }
 
-bool isVerbosityFlag(const std::string &arg) {
-    return arg.size() >= 2 && arg[0] == '-' &&
-           arg.find_first_not_of('v', 1) == std::string::npos;
+bool isVerbosityFlag(const std::string& arg)
+{
+    return arg.size() >= 2 && arg[0] == '-' && arg.find_first_not_of('v', 1) == std::string::npos;
 }
 
-} // namespace
+}  // namespace
 
-namespace Log {
+namespace Log
+{
 
-void init(int &argc, char **argv) {
+void init(int& argc, char** argv)
+{
     spdlog::level::level_enum level = defaultLevel();
-    std::vector<char *> remaining;
+    std::vector<char*> remaining;
     remaining.push_back(argv[0]);
 
-    for (int i = 1; i < argc; ++i) {
+    for (int i = 1; i < argc; ++i)
+    {
         const std::string arg = argv[i];
 
-        if (isVerbosityFlag(arg)) {
+        if (isVerbosityFlag(arg))
+        {
             const std::size_t vCount = arg.size() - 1;
             level = (vCount >= 2) ? spdlog::level::trace : spdlog::level::debug;
             continue;
         }
 
-        if (arg == "-D" && i + 1 < argc) {
+        if (arg == "-D" && i + 1 < argc)
+        {
             const int n = std::atoi(argv[++i]);
-            if (n >= spdlog::level::trace && n <= spdlog::level::off) {
+            if (n >= spdlog::level::trace && n <= spdlog::level::off)
+            {
                 level = static_cast<spdlog::level::level_enum>(n);
             }
             continue;
@@ -49,7 +57,8 @@ void init(int &argc, char **argv) {
     }
 
     argc = static_cast<int>(remaining.size());
-    for (std::size_t i = 0; i < remaining.size(); ++i) {
+    for (std::size_t i = 0; i < remaining.size(); ++i)
+    {
         argv[i] = remaining[i];
     }
 
@@ -57,4 +66,4 @@ void init(int &argc, char **argv) {
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
 }
 
-} // namespace Log
+}  // namespace Log

@@ -1,12 +1,13 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include <QDateTime>
 #include <QString>
 #include <QStringList>
-#include <QDateTime>
 #include <memory>
 
-struct PackageInfo {
+struct PackageInfo
+{
     QString name;
     QString version;
     QString description;
@@ -15,29 +16,43 @@ struct PackageInfo {
     QString upstreamUrl;
     QStringList dependList;
     QDateTime lastUpdated;
-    
+
     PackageInfo() = default;
-    
-    PackageInfo(const QString& name, const QString& version, 
-                const QString& description, const QString& repository)
-        : name(name), version(version), description(description), 
-          repository(repository) {}
+
+    PackageInfo(const QString& name, const QString& version, const QString& description, const QString& repository)
+        : name(name)
+        , version(version)
+        , description(description)
+        , repository(repository)
+    {
+    }
 };
 
-struct UpdateInfo {
+struct UpdateInfo
+{
     QString name;
     QString oldVersion;
     QString newVersion;
     QString repository;
     qint64 downloadSize;
-    
-    UpdateInfo() : downloadSize(0) {}
-    
-    UpdateInfo(const QString& name, const QString& oldVersion,
-               const QString& newVersion, const QString& repository,
+
+    UpdateInfo()
+        : downloadSize(0)
+    {
+    }
+
+    UpdateInfo(const QString& name,
+               const QString& oldVersion,
+               const QString& newVersion,
+               const QString& repository,
                qint64 downloadSize = 0)
-        : name(name), oldVersion(oldVersion), newVersion(newVersion),
-          repository(repository), downloadSize(downloadSize) {}
+        : name(name)
+        , oldVersion(oldVersion)
+        , newVersion(newVersion)
+        , repository(repository)
+        , downloadSize(downloadSize)
+    {
+    }
 };
 
-#endif // TYPES_H
+#endif  // TYPES_H

@@ -14,6 +14,27 @@ on:
   workflow_dispatch:
 
 jobs:
+  format:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+
+    steps:
+    - name: Install clang-format
+      run: |
+        pacman -Syu --noconfirm
+        pacman -S --noconfirm --needed clang
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Mark git directory as safe
+      run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+    - name: Check formatting
+      run: |
+        find src -name '*.cpp' -o -name '*.h' | xargs clang-format --dry-run --Werror
+
   build:
     runs-on: ubuntu-latest
     container:
