@@ -10,6 +10,12 @@ int main(int argc, char *argv[]) {
 
     QApplication app(argc, argv);
 
+    // resources.qrc is compiled into the static `gui` library (0.3.2's
+    // granular CMake split); a static lib's resource initializer is only
+    // linked in if something references it, so it must be registered
+    // explicitly here instead of relying on static init order.
+    Q_INIT_RESOURCE(resources);
+
     // Set application metadata
     app.setApplicationName("Explorer");
     app.setApplicationVersion(APP_VERSION);
