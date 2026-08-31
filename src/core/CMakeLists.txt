@@ -8,6 +8,10 @@ add_library(core STATIC
     aur_helper.h
     package_manager.cpp
     package_manager.h
+    pacman_conf.cpp
+    pacman_conf.h
+    progress_parser.cpp
+    progress_parser.h
 )
 
 target_include_directories(core PUBLIC ${ALPM_INCLUDE_DIRS})
