@@ -27,10 +27,12 @@ A modern, native package manager for Arch Linux built with Qt6 and C++20. This i
 ### Build Dependencies
 
 ```bash
-sudo pacman -S base-devel cmake qt6-base qt6-svg alpm pkgconf spdlog
+sudo pacman -S base-devel cmake qt6-base qt6-svg alpm pkgconf spdlog catch2
 ```
 
 You can optionally also have either either yay or paru if you would like to work with packages from the AUR.
+
+`catch2` is only needed to build the test suite (see [Testing](#testing) below); pass `-DBUILD_TESTING=OFF` to `cmake` to skip it.
 
 ## Building
 
@@ -91,6 +93,19 @@ Verbosity can be raised with `-v` flags or set explicitly with `-D <N>`:
 
 # Explicit level: warnings and above only
 ./build/explorer -D 3
+```
+
+## Testing
+
+Explorer has a [Catch2](https://github.com/catchorg/Catch2)-based unit test
+suite, run through CTest. Coverage is currently pure logic only — AUR JSON
+parsing, `pacman.conf` section parsing, and pacman/yay/paru progress-output
+parsing. `AlpmWrapper`/`PackageManager` still talk to real `libalpm`/`pkexec`
+and aren't covered yet.
+
+```bash
+cd build
+ctest --output-on-failure
 ```
 
 ## License
