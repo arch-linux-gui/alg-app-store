@@ -23,7 +23,7 @@ jobs:
     - name: Install clang-format
       run: |
         pacman -Syu --noconfirm
-        pacman -S --noconfirm --needed clang
+        pacman -S --noconfirm --needed clang git
 
     - name: Checkout code
       uses: actions/checkout@v4
