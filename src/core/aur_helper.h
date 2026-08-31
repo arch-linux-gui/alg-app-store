@@ -28,6 +28,10 @@ public:
     void getPackageInfo(const QString& packageName);
     QVector<UpdateInfo> checkAurUpdates();
 
+    // Pure JSON -> PackageInfo mapping, exposed as a static so it can be unit
+    // tested without a QNetworkAccessManager or a live AUR request.
+    static PackageInfo parseAurPackage(const QJsonObject& obj);
+
 signals:
     void searchCompleted(const QVector<PackageInfo>& results);
     void packageInfoReceived(const PackageInfo& info);
@@ -39,8 +43,6 @@ private slots:
 
 private:
     std::unique_ptr<QNetworkAccessManager> m_networkManager;
-
-    PackageInfo parseAurPackage(const QJsonObject& obj);
 };
 
 #endif  // AUR_HELPER_H
