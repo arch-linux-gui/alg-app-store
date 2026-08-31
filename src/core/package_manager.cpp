@@ -2,6 +2,7 @@
 #include "../utils/logging.h"
 #include <QFile>
 #include <QStandardPaths>
+#include <stop_token>
 
 PackageManager& PackageManager::instance()
 {
@@ -222,45 +223,63 @@ void PackageManager::onProcessOutput()
     }
 }
 
+void PackageManager::spawnKillHelper(const QStringList& pkillArgs)
+{
+    // Reassigning m_killHelperThread auto-requests-stop and joins whatever
+    // was previously running here first (std::jthread destructor/move-assign
+    // semantics), so a second cancel click interrupts an in-flight wait
+    // instead of stacking up behind it.
+    m_killHelperThread = std::jthread(
+        [pkillArgs](std::stop_token stopToken)
+        {
+            QProcess killProcess;
+            killProcess.start("pkexec", pkillArgs);
+
+            // Cuts the wait short if request_stop() is called (second cancel
+            // click, or PackageManager being destroyed) instead of always
+            // riding out the full 2s.
+            std::stop_callback stopCallback(stopToken, [&killProcess]() { killProcess.kill(); });
+
+            killProcess.waitForFinished(2000);
+        });
+}
+
 void PackageManager::cancelRunningOperation()
 {
-    if (m_process && m_process->state() != QProcess::NotRunning)
-    {
-        spdlog::warn("Killing running operation...");
-        emit operationOutput("\n>>> Operation cancelled by user <<<\n");
-
-        // When using pkexec, we need to kill the actual pacman/yay/paru process
-        // not just the pkexec wrapper. Use pkill to terminate all package manager processes.
-        QProcess killProcess;
-        killProcess.start("pkexec",
-                          QStringList() << "bash" << "-c"
-                                        << "pkill -TERM pacman; pkill -TERM yay; pkill -TERM paru");
-        killProcess.waitForFinished(2000);
-
-        // Also terminate the QProcess wrapper
-        m_process->terminate();
-
-        // Wait up to 3 seconds for graceful termination
-        if (!m_process->waitForFinished(3000))
-        {
-            // Force kill if still running
-            spdlog::warn("Process did not terminate gracefully, forcing kill...");
-            killProcess.start("pkexec",
-                              QStringList() << "bash" << "-c"
-                                            << "pkill -KILL pacman; pkill -KILL yay; pkill -KILL paru");
-            killProcess.waitForFinished(2000);
-
-            m_process->kill();
-            m_process->waitForFinished(1000);
-        }
-
-        emit operationCompleted(false, "Operation cancelled by user");
-        spdlog::info("Operation cancelled successfully");
-    }
-    else
+    if (!m_process || m_process->state() == QProcess::NotRunning)
     {
         spdlog::warn("No operation is currently running");
+        return;
     }
+
+    spdlog::warn("Killing running operation...");
+    emit operationOutput("\n>>> Operation cancelled by user <<<\n");
+
+    // When using pkexec, we need to kill the actual pacman/yay/paru process,
+    // not just the pkexec wrapper - terminate()/kill() below only reach the
+    // local wrapper. That pkexec call has to wait on a polkit prompt, which
+    // is exactly the kind of blocking work that shouldn't run on the GUI
+    // thread, so it runs on a std::jthread (see spawnKillHelper) instead of
+    // blocking here; it runs concurrently with the waitForFinished() below
+    // rather than before it.
+    spawnKillHelper(QStringList() << "bash" << "-c" << "pkill -TERM pacman; pkill -TERM yay; pkill -TERM paru");
+
+    // Also terminate the QProcess wrapper
+    m_process->terminate();
+
+    // Wait up to 3 seconds for graceful termination
+    if (!m_process->waitForFinished(3000))
+    {
+        // Force kill if still running
+        spdlog::warn("Process did not terminate gracefully, forcing kill...");
+        spawnKillHelper(QStringList() << "bash" << "-c" << "pkill -KILL pacman; pkill -KILL yay; pkill -KILL paru");
+
+        m_process->kill();
+        m_process->waitForFinished(1000);
+    }
+
+    emit operationCompleted(false, "Operation cancelled by user");
+    spdlog::info("Operation cancelled successfully");
 }
 
 bool PackageManager::isOperationRunning() const
