@@ -2,7 +2,7 @@
 
 Contributions are welcome and appreciated! To contribute:
 
-- Code follows C++17 standards
+- Code follows C++20 standards
 - Proper error handling and logging
 - Thread safety for concurrent operations
 - Qt best practices for GUI code
@@ -15,7 +15,7 @@ Contributions are welcome and appreciated! To contribute:
    git checkout -b feature/your-feature-name
    ```
 3. **Make Your Changes:**
-   - Follow modern C++17 best practices
+   - Follow modern C++20 best practices
    - Use Qt6 APIs and conventions
    - Ensure code compiles without warnings
    - Test on your desktop environment (KDE, GNOME, or Xfce)
@@ -31,8 +31,8 @@ Contributions are welcome and appreciated! To contribute:
 
 ```
 ├── assets
-│   ├── alg-app-store.desktop
-│   └── alg-app-store.png
+│   ├── explorer.desktop
+│   └── explorer.png
 ├── build.sh
 ├── CMakeLists.txt
 ├── CONTRIBUTING.md
@@ -47,7 +47,12 @@ Contributions are welcome and appreciated! To contribute:
 │   │   ├── aur_helper.cpp
 │   │   ├── aur_helper.h
 │   │   ├── package_manager.cpp
-│   │   └── package_manager.h
+│   │   ├── package_manager.h
+│   │   ├── pacman_conf.cpp
+│   │   ├── pacman_conf.h
+│   │   ├── progress_parser.cpp
+│   │   ├── progress_parser.h
+│   │   └── CMakeLists.txt
 │   ├── gui
 │   │   ├── home_widget.cpp
 │   │   ├── home_widget.h
@@ -64,15 +69,24 @@ Contributions are welcome and appreciated! To contribute:
 │   │   ├── settings_widget.cpp
 │   │   ├── settings_widget.h
 │   │   ├── updates_widget.cpp
-│   │   └── updates_widget.h
+│   │   ├── updates_widget.h
+│   │   └── CMakeLists.txt
 │   ├── main.cpp
 │   └── utils
-│       ├── logger.h
-│       └── types.h
+│       ├── logging.cpp
+│       ├── logging.h
+│       ├── types.h
+│       ├── version.h.in
+│       └── CMakeLists.txt
 ├── stylesheet.qss
+├── tests
+│   ├── test_aur_helper.cpp
+│   ├── test_pacman_conf.cpp
+│   ├── test_progress_parser.cpp
+│   └── CMakeLists.txt
 └── TODO.md
 
-6 directories, 36 files
+7 directories, 40 files
 ```
 
 ## Understanding the code
@@ -96,6 +110,16 @@ Manages package operations with proper privilege escalation:
 - Update operations
 - Automatic helper detection (yay/paru/pacman)
 - Process management with signals
+
+#### pacman_conf / progress_parser
+Pure, dependency-free logic pulled out of GUI classes specifically so it can
+be unit tested: `pacman_conf` scans `pacman.conf` text for `[multilib]`/
+`[chaotic-aur]` section state (`SettingsWidget` reads the file and calls
+into it); `progress_parser` turns raw pacman/yay/paru output lines into a
+`ProgressParseResult` (`PackageDetailsDialog` applies the result to its
+widgets). When adding logic to a GUI class, prefer this pattern — a free
+function in `core` taking plain data in and returning plain data out — over
+burying it in a slot that touches widgets directly, so it stays testable.
 
 ### GUI Components
 - **MainWindow**: Tabbed interface container
@@ -131,16 +155,65 @@ Used for `AlpmWrapper` and `PackageManager` to ensure:
 
 ## Logging
 
-The application includes a comprehensive logging system:
+Logging is done with [spdlog](https://github.com/gabime/spdlog), called
+directly at each call site:
 
 ```cpp
-Logger::info("Information message");
-Logger::warning("Warning message");
-Logger::error("Error message");
-Logger::debug("Debug message");
+spdlog::info("Informational message");
+spdlog::warn("Warning message");
+spdlog::error("Error message");
+spdlog::debug("Debug message");
 ```
 
+Dynamic (non-literal) messages must be passed as a format argument, not as
+the format string itself, so content containing `{`/`}` (package output,
+JSON, file contents, etc.) can't be misparsed as a format placeholder:
+
+```cpp
+spdlog::info("{}", someQString.toStdString());
+```
+
+`Log::init(argc, argv)` (in `src/utils/logging.h`) is called at the very
+start of `main()`, before `QApplication` is constructed. It parses and
+strips verbosity flags from argv and sets the logger's level:
+
+- No flags: `debug` in dev builds, `info` in Release builds (`NDEBUG`)
+- `-v`: `debug`
+- `-vv` (or more `v`s): `trace`
+- `-D <N>`: explicit `spdlog::level::level_enum` value (`0`=trace .. `6`=off),
+  overriding `-v` when both are given
+
 Logs are output to standard output and can be redirected for persistent logging.
+
+## Testing
+
+Unit tests use [Catch2](https://github.com/catchorg/Catch2) (v3, system
+package `catch2`) driven through CTest, and live in `tests/`:
+
+```bash
+cd build
+ctest --output-on-failure
+```
+
+**Scope is pure logic only.** `AlpmWrapper` and `PackageManager` are hard
+singletons that talk to real `libalpm`/`pkexec`/`/etc/pacman.conf` and
+aren't mocked yet — a full ALPM mock backend is planned once the
+architecture cleanup gives it a real seam to mock against. Everything
+currently covered is a free function that takes plain data (a `QJsonObject`,
+a `QString`) and returns plain data, with no Qt Widgets or I/O:
+
+- `AurHelper::parseAurPackage` — AUR JSON → `PackageInfo`
+- `PacmanConf::isMultilibEnabled` / `isChaoticAurEnabled` — `pacman.conf`
+  section-state parsing
+- `parseOperationProgress` — pacman/yay/paru output line → `ProgressParseResult`
+
+When you add a test-worthy piece of logic to a GUI class, pull it out the
+same way (see [pacman_conf / progress_parser](#pacman_conf--progress_parser)
+above) rather than writing it inline in a slot.
+
+`BUILD_TESTING` (from CMake's built-in `CTest` module, default `ON`) gates
+the `tests/` subdirectory and the `find_package(Catch2 3 REQUIRED)` call —
+pass `-DBUILD_TESTING=OFF` to skip both if you don't have `catch2` installed.
 
 ## Package Helper Detection
 

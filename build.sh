@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Build script for ALG App Store Qt6 version
+# Build script for Explorer Qt6 version
 
 set -e
 
 echo "==================================="
-echo "ALG App Store - Qt6 Build Script"
+echo "Explorer - Qt6 Build Script"
 echo "==================================="
 echo ""
 
@@ -57,7 +57,7 @@ echo "Build completed successfully!"
 echo "==================================="
 echo ""
 echo "To run the application:"
-echo "  ./build/alg-app-store"
+echo "  ./build/explorer"
 echo ""
 echo "To install system-wide:"
 echo "  sudo make install (from build directory)"

@@ -9,7 +9,7 @@
 - [] Clean up UI; make UI look more modern (check gnome's styling options) - style_and_theme
 - [] Set a light/dark theme toggle, or follow system's theme - style_and_theme
 - [] Look into spdlog for logging
-- [] Look into CppUTest or Google Test (gtest) for test
+- [] Look into Catch2 and Ctest
 
 ## Future Enhancements
 

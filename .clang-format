@@ -7,7 +7,7 @@ AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: "false"
 AllowShortLambdasOnASingleLine: All
 AllowShortLoopsOnASingleLine: "false"
-AlwaysBreakAfterReturnType: TopLevelDefinitions
+AlwaysBreakAfterReturnType: None
 AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: "false"
 BinPackParameters: "false"
@@ -28,7 +28,7 @@ SortIncludes: "true"
 SpaceAfterCStyleCast: "false"
 SpaceInEmptyBlock: "false"
 SpacesBeforeTrailingComments: "2"
-SpacesInAngles: "true"
-SpacesInParentheses: "true"
-SpacesInSquareBrackets: "true"
-Standard: c++17
+SpacesInAngles: "false"
+SpacesInParentheses: "false"
+SpacesInSquareBrackets: "false"
+Standard: c++20

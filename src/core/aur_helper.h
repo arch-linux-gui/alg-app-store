@@ -1,13 +1,14 @@
 #ifndef AUR_HELPER_H
 #define AUR_HELPER_H
 
-#include <QString>
-#include <QVector>
+#include "../utils/types.h"
 #include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <QString>
+#include <QVector>
 #include <memory>
-#include "../utils/types.h"
+#include <stop_token>
 
 /**
  * @brief Helper class for interacting with the Arch User Repository (AUR).
@@ -16,30 +17,39 @@
  * - m_networkManager: Owned by std::unique_ptr for RAII-style cleanup
  * - Network replies are managed via Qt parent-child and deleteLater()
  */
-class AurHelper : public QObject {
+class AurHelper : public QObject
+{
     Q_OBJECT
-    
+
 public:
     explicit AurHelper(QObject* parent = nullptr);
     ~AurHelper() override;
-    
+
     void searchPackages(const QString& query);
     void getPackageInfo(const QString& packageName);
-    QVector<UpdateInfo> checkAurUpdates();
-    
+
+    // Sequentially queries the AUR RPC for each foreign package's latest
+    // version. stopToken allows a caller (see UpdatesWidget, which runs
+    // this on a std::jthread) to interrupt the loop between packages, and
+    // to abort a request that's already in flight rather than blocking
+    // until it completes or times out.
+    QVector<UpdateInfo> checkAurUpdates(std::stop_token stopToken = { });
+
+    // Pure JSON -> PackageInfo mapping, exposed as a static so it can be unit
+    // tested without a QNetworkAccessManager or a live AUR request.
+    static PackageInfo parseAurPackage(const QJsonObject& obj);
+
 signals:
     void searchCompleted(const QVector<PackageInfo>& results);
     void packageInfoReceived(const PackageInfo& info);
     void error(const QString& message);
-    
+
 private slots:
     void onSearchFinished();
     void onPackageInfoFinished();
-    
+
 private:
     std::unique_ptr<QNetworkAccessManager> m_networkManager;
-    
-    PackageInfo parseAurPackage(const QJsonObject& obj);
 };
 
-#endif // AUR_HELPER_H
+#endif  // AUR_HELPER_H

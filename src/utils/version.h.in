@@ -1,0 +1,5 @@
+#pragma once
+
+// Generated from version.h.in by CMake — do not edit directly.
+// Sourced from the repo-root VERSION file (see CMakeLists.txt).
+#define APP_VERSION "@PROJECT_VERSION@"

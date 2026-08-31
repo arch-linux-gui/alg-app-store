@@ -1,35 +1,42 @@
 #ifndef UPDATES_WIDGET_H
 #define UPDATES_WIDGET_H
 
-#include <QWidget>
-#include <QScrollArea>
-#include <QVBoxLayout>
-#include <QPushButton>
-#include <QLabel>
-#include <QVector>
-#include <QProgressBar>
-#include <QTextEdit>
-#include <QLineEdit>
 #include "../utils/types.h"
+#include <QLabel>
+#include <QLineEdit>
+#include <QProgressBar>
+#include <QPushButton>
+#include <QScrollArea>
+#include <QTextEdit>
+#include <QVBoxLayout>
+#include <QVector>
+#include <QWidget>
+#include <thread>
 
 class UpdateItem;
 
 /**
  * @brief Widget for displaying and managing package updates.
- * 
+ *
  * Memory Management:
  * - All Qt widget members use Qt parent-child ownership (raw pointers are non-owning)
  * - UpdateItem widgets are dynamically created/destroyed in displayUpdates/clearUpdates
+ * - m_updateCheckThread: a std::jthread running the AUR/ALPM update check.
+ *   Its destructor auto-requests-stop and joins, so a check in progress is
+ *   cancelled (not left dangling) if the widget is destroyed, and a second
+ *   checkForUpdates() call cancels any still-running previous check instead
+ *   of letting two run concurrently.
  */
-class UpdatesWidget : public QWidget {
+class UpdatesWidget : public QWidget
+{
     Q_OBJECT
-    
+
 public:
     explicit UpdatesWidget(QWidget* parent = nullptr);
     ~UpdatesWidget() override = default;
-    
+
     void checkForUpdates();
-    
+
 private:
     void setupUi();
     void displayUpdates(const QVector<UpdateInfo>& updates);
@@ -39,7 +46,7 @@ private:
     void showProgress(const QString& message);
     void hideProgress();
     void toggleLogViewer();
-    
+
     // Qt parent-child managed widgets (non-owning pointers)
     QLineEdit* m_searchInput = nullptr;
     QScrollArea* m_scrollArea = nullptr;
@@ -49,7 +56,7 @@ private:
     QLabel* m_countLabel = nullptr;
     QPushButton* m_updateAllButton = nullptr;
     QPushButton* m_checkButton = nullptr;
-    
+
     // Progress bar and log viewer (Qt parent-child managed)
     QWidget* m_progressWidget = nullptr;
     QProgressBar* m_progressBar = nullptr;
@@ -58,10 +65,12 @@ private:
     QWidget* m_logWidget = nullptr;
     QTextEdit* m_logViewer = nullptr;
     bool m_logVisible = false;
-    
+
     QVector<UpdateInfo> m_updates;
     QVector<UpdateInfo> m_filteredUpdates;
-    
+
+    std::jthread m_updateCheckThread;
+
 private slots:
     void onUpdateAll();
     void onUpdateSingle(const QString& packageName);
@@ -72,4 +81,4 @@ private slots:
     void onOperationError(const QString& error);
 };
 
-#endif // UPDATES_WIDGET_H
+#endif  // UPDATES_WIDGET_H

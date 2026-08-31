@@ -20,7 +20,7 @@ Makefile
 *.pro.user.*
 
 # Executable
-alg-app-store
+explorer
 
 # IDE
 .vscode/

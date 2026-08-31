@@ -1,29 +1,40 @@
 #include "gui/mainwindow.h"
-#include "utils/logger.h"
+#include "utils/logging.h"
+#include "utils/version.h"
 #include <QApplication>
 #include <QStyleFactory>
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
+    // Parses and strips -v/-vv/-vvv and -D <N> before Qt ever sees argv.
+    Log::init(argc, argv);
+
     QApplication app(argc, argv);
-    
+
+    // resources.qrc is compiled into the static `gui` library (0.3.2's
+    // granular CMake split); a static lib's resource initializer is only
+    // linked in if something references it, so it must be registered
+    // explicitly here instead of relying on static init order.
+    Q_INIT_RESOURCE(resources);
+
     // Set application metadata
-    app.setApplicationName("ALG App Store");
-    app.setApplicationVersion("2.0.0");
+    app.setApplicationName("Explorer");
+    app.setApplicationVersion(APP_VERSION);
     app.setOrganizationName("Arch Linux GUI");
-    
+
     // Set application style
     app.setStyle(QStyleFactory::create("Fusion"));
-    
-    Logger::info("Starting ALG App Store");
-    Logger::info(QString("Qt version: %1").arg(qVersion()));
-    
+
+    spdlog::info("Starting Explorer");
+    spdlog::info("{}", (QString("Qt version: %1").arg(qVersion())).toStdString());
+
     MainWindow window;
     window.show();
-    
-    Logger::info("Application window shown");
-    
+
+    spdlog::info("Application window shown");
+
     int result = app.exec();
-    
-    Logger::info("Application exiting");
+
+    spdlog::info("Application exiting");
     return result;
 }
