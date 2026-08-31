@@ -27,6 +27,13 @@ add_subdirectory(src/utils)
 add_subdirectory(src/core)
 add_subdirectory(src/gui)
 
+# Defines BUILD_TESTING (default ON) and calls enable_testing().
+include(CTest)
+if(BUILD_TESTING)
+    find_package(Catch2 3 REQUIRED)
+    add_subdirectory(tests)
+endif()
+
 add_executable(${PROJECT_NAME}
     src/main.cpp
 )
