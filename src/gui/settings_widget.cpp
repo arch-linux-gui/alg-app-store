@@ -1,6 +1,7 @@
 #include "settings_widget.h"
 #include "../core/alpm_wrapper.h"
 #include "../core/package_manager.h"
+#include "../core/pacman_conf.h"
 #include "../utils/logging.h"
 #include <QFile>
 #include <QHBoxLayout>
@@ -345,39 +346,10 @@ bool SettingsWidget::isMultilibEnabledInPacmanConf() const
     }
 
     QTextStream in(&file);
-    bool inMultilibSection = false;
-
-    while (!in.atEnd())
-    {
-        QString line = in.readLine().trimmed();
-
-        // Check for [multilib] section header
-        if (line == "[multilib]")
-        {
-            inMultilibSection = true;
-            continue;
-        }
-
-        // If we found [multilib] section, check if it's not commented
-        if (inMultilibSection && !line.isEmpty() && !line.startsWith("#"))
-        {
-            // If we find Include directive, multilib is enabled
-            if (line.startsWith("Include"))
-            {
-                file.close();
-                return true;
-            }
-        }
-
-        // If we hit another section, stop
-        if (inMultilibSection && line.startsWith("[") && line != "[multilib]")
-        {
-            break;
-        }
-    }
-
+    const QString contents = in.readAll();
     file.close();
-    return false;
+
+    return PacmanConf::isMultilibEnabled(contents);
 }
 
 bool SettingsWidget::isChaoticAurEnabledInPacmanConf() const
@@ -390,39 +362,10 @@ bool SettingsWidget::isChaoticAurEnabledInPacmanConf() const
     }
 
     QTextStream in(&file);
-    bool inChaoticAurSection = false;
-
-    while (!in.atEnd())
-    {
-        QString line = in.readLine().trimmed();
-
-        // Check for [chaotic-aur] section header
-        if (line == "[chaotic-aur]")
-        {
-            inChaoticAurSection = true;
-            continue;
-        }
-
-        // If we found [chaotic-aur] section, check if it's not commented
-        if (inChaoticAurSection && !line.isEmpty() && !line.startsWith("#"))
-        {
-            // If we find Include or Server directive, chaotic-aur is enabled
-            if (line.startsWith("Include") || line.startsWith("Server"))
-            {
-                file.close();
-                return true;
-            }
-        }
-
-        // If we hit another section, stop
-        if (inChaoticAurSection && line.startsWith("[") && line != "[chaotic-aur]")
-        {
-            break;
-        }
-    }
-
+    const QString contents = in.readAll();
     file.close();
-    return false;
+
+    return PacmanConf::isChaoticAurEnabled(contents);
 }
 
 bool SettingsWidget::enableMultilibInPacmanConf()
