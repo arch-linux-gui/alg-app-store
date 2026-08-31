@@ -161,7 +161,7 @@ PackageInfo AurHelper::parseAurPackage(const QJsonObject& obj)
     return info;
 }
 
-QVector<UpdateInfo> AurHelper::checkAurUpdates()
+QVector<UpdateInfo> AurHelper::checkAurUpdates(std::stop_token stopToken)
 {
     QVector<UpdateInfo> updates;
 
@@ -181,6 +181,12 @@ QVector<UpdateInfo> AurHelper::checkAurUpdates()
 
     for (const auto& line : lines)
     {
+        if (stopToken.stop_requested())
+        {
+            spdlog::info("AUR update check cancelled");
+            break;
+        }
+
         QStringList parts = line.split(' ', Qt::SkipEmptyParts);
         if (parts.size() < 2)
         {
@@ -203,7 +209,21 @@ QVector<UpdateInfo> AurHelper::checkAurUpdates()
 
         QEventLoop loop;
         connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+
+        // Interrupts a request that's already in flight (not just the gap
+        // between packages), so cancellation is prompt even if the AUR RPC
+        // is slow or unreachable.
+        std::stop_callback stopCallback(stopToken, [&loop]() { loop.quit(); });
+
         loop.exec();
+
+        if (stopToken.stop_requested())
+        {
+            reply->abort();
+            reply->deleteLater();
+            spdlog::info("AUR update check cancelled");
+            break;
+        }
 
         if (reply->error() == QNetworkReply::NoError)
         {

@@ -8,6 +8,7 @@
 #include <QString>
 #include <QVector>
 #include <memory>
+#include <stop_token>
 
 /**
  * @brief Helper class for interacting with the Arch User Repository (AUR).
@@ -26,7 +27,13 @@ public:
 
     void searchPackages(const QString& query);
     void getPackageInfo(const QString& packageName);
-    QVector<UpdateInfo> checkAurUpdates();
+
+    // Sequentially queries the AUR RPC for each foreign package's latest
+    // version. stopToken allows a caller (see UpdatesWidget, which runs
+    // this on a std::jthread) to interrupt the loop between packages, and
+    // to abort a request that's already in flight rather than blocking
+    // until it completes or times out.
+    QVector<UpdateInfo> checkAurUpdates(std::stop_token stopToken = { });
 
     // Pure JSON -> PackageInfo mapping, exposed as a static so it can be unit
     // tested without a QNetworkAccessManager or a live AUR request.
