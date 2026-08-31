@@ -1,6 +1,7 @@
 #include "package_details_dialog.h"
 #include "../core/alpm_wrapper.h"
 #include "../core/package_manager.h"
+#include "../core/progress_parser.h"
 #include "../utils/logging.h"
 #include <QCoreApplication>
 #include <QDesktopServices>
@@ -493,52 +494,27 @@ void PackageDetailsDialog::toggleLogViewer()
 
 void PackageDetailsDialog::parseProgressOutput(const QString& output)
 {
-    // Parse pacman/yay/paru output for progress information
+    // Parsing itself lives in core/progress_parser.{h,cpp} (pure logic, unit
+    // tested there); this just applies the result to the dialog's widgets.
+    const ProgressParseResult result = parseOperationProgress(output);
 
-    // Pattern: "downloading..." or "installing..."
-    if (output.contains("downloading", Qt::CaseInsensitive))
+    if (result.statusText)
     {
-        m_progressLabel->setText("Downloading packages...");
-    }
-    else if (output.contains("installing", Qt::CaseInsensitive))
-    {
-        m_progressLabel->setText("Installing packages...");
-    }
-    else if (output.contains("building", Qt::CaseInsensitive))
-    {
-        m_progressLabel->setText("Building packages...");
-    }
-    else if (output.contains("checking", Qt::CaseInsensitive))
-    {
-        m_progressLabel->setText("Checking dependencies...");
-    }
-    else if (output.contains("resolving", Qt::CaseInsensitive))
-    {
-        m_progressLabel->setText("Resolving dependencies...");
+        m_progressLabel->setText(*result.statusText);
     }
 
-    // Pattern: "(1/5)" or "( 1/5)" to track package progress
-    QRegularExpression packagePattern(R"(\(\s*(\d+)/(\d+)\))");
-    auto match = packagePattern.match(output);
-    if (match.hasMatch())
+    if (result.currentPackage)
     {
-        m_currentPackage = match.captured(1).toInt();
-        m_totalPackages = match.captured(2).toInt();
-
-        if (m_totalPackages > 0)
-        {
-            int percentage = (m_currentPackage * 100) / m_totalPackages;
-            m_progressBar->setValue(percentage);
-        }
+        m_currentPackage = *result.currentPackage;
+    }
+    if (result.totalPackages)
+    {
+        m_totalPackages = *result.totalPackages;
     }
 
-    // Pattern: "[##########] 100%" for download progress
-    QRegularExpression percentPattern(R"(\s+(\d+)%\s*)");
-    auto percentMatch = percentPattern.match(output);
-    if (percentMatch.hasMatch())
+    if (result.progressPercent)
     {
-        int percentage = percentMatch.captured(1).toInt();
-        m_progressBar->setValue(percentage);
+        m_progressBar->setValue(*result.progressPercent);
     }
 }
 
