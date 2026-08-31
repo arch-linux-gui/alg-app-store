@@ -8,7 +8,6 @@
 #include <QMessageBox>
 #include <QStyle>
 #include <QTextCursor>
-#include <QtConcurrent>
 
 class UpdateItem : public QWidget
 {
@@ -221,15 +220,23 @@ void UpdatesWidget::checkForUpdates()
 
     clearUpdates();
 
-    (void)QtConcurrent::run(
-        [this]()
+    // Reassigning a running jthread auto-requests-stop and joins the
+    // previous one first, so a still-running check gets cancelled here
+    // rather than running concurrently with this one.
+    m_updateCheckThread = std::jthread(
+        [this](std::stop_token stopToken)
         {
             auto updates = AlpmWrapper::instance().getAvailableUpdates();
 
             // Also check AUR updates
             AurHelper aurHelper;
-            auto aurUpdates = aurHelper.checkAurUpdates();
+            auto aurUpdates = aurHelper.checkAurUpdates(stopToken);
             updates.append(aurUpdates);
+
+            if (stopToken.stop_requested())
+            {
+                return;
+            }
 
             QMetaObject::invokeMethod(
                 this,

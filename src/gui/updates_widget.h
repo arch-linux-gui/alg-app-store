@@ -11,15 +11,21 @@
 #include <QVBoxLayout>
 #include <QVector>
 #include <QWidget>
+#include <thread>
 
 class UpdateItem;
 
 /**
  * @brief Widget for displaying and managing package updates.
- * 
+ *
  * Memory Management:
  * - All Qt widget members use Qt parent-child ownership (raw pointers are non-owning)
  * - UpdateItem widgets are dynamically created/destroyed in displayUpdates/clearUpdates
+ * - m_updateCheckThread: a std::jthread running the AUR/ALPM update check.
+ *   Its destructor auto-requests-stop and joins, so a check in progress is
+ *   cancelled (not left dangling) if the widget is destroyed, and a second
+ *   checkForUpdates() call cancels any still-running previous check instead
+ *   of letting two run concurrently.
  */
 class UpdatesWidget : public QWidget
 {
@@ -62,6 +68,8 @@ private:
 
     QVector<UpdateInfo> m_updates;
     QVector<UpdateInfo> m_filteredUpdates;
+
+    std::jthread m_updateCheckThread;
 
 private slots:
     void onUpdateAll();
