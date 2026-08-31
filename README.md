@@ -1,6 +1,6 @@
-# Explorer - Qt6/C++ Version
+# Explorer - ALG App Store and GUI package management tool
 
-A modern, native package manager for Arch Linux built with Qt6 and C++20. This is a complete rewrite of the original Wails-based application (formerly known as ALG App Store).
+A modern, native package manager for Arch Linux built with Qt6 and C++20. This is a complete rewrite of the original Wails-based application (formerly known as ALG App Store). It is a GUI frontend to libalpm.
 
 ## Features
 
