@@ -33,7 +33,7 @@ jobs:
 
     - name: Check formatting
       run: |
-        find src -name '*.cpp' -o -name '*.h' | xargs clang-format --dry-run --Werror
+        find src tests \( -name '*.cpp' -o -name '*.h' \) | xargs clang-format --dry-run --Werror
 
   build:
     runs-on: ubuntu-latest
@@ -57,7 +57,9 @@ jobs:
           pacman \
           libarchive \
           curl \
-          pkgconf
+          pkgconf \
+          spdlog \
+          catch2
     
     - name: Checkout code
       uses: actions/checkout@v4
@@ -102,7 +104,12 @@ jobs:
       run: |
         cd build
         make -j$(nproc)
-    
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure
+
     - name: Check build artifacts
       run: |
         ls -lh build/explorer
